@@ -5,3 +5,4 @@ __pycache__/
 *.py[cod]
 *.db
 *.sqlite3
+docker-compose.yml
