@@ -11,6 +11,7 @@ MarkupSafe==3.0.3
 mistune==3.3.4
 packaging==26.3
 PyMySQL==1.2.0
+mysql-connector-python==26.7.0
 python-dotenv==1.2.3
 PyYAML==6.0.3
 referencing==0.37.0
