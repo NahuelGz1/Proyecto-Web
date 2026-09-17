@@ -1,3 +1,6 @@
+CREATE DATABASE IF NOT EXISTS reserva_canchas_club;
+USE reserva_canchas_club;
+
 CREATE TABLE IF NOT EXISTS deportes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL
