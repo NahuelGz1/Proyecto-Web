@@ -7,7 +7,7 @@ from src.routes.deportes import deportes_bp
 app = Flask(__name__)
 app.json.ensure_ascii = False
 
-# registra blueprints asociendoles la base_url
+# registra blueprints asociandoles la base_url
 app.register_blueprint(deportes_bp, url_prefix=BASE_URL)
 
 @app.route('/')

@@ -7,6 +7,5 @@ def conexion():
         port=DB_PORT,
         user=DB_USER,
         password=DB_PASSWORD,
-        database=DB_NAME,
-        dictionary=True
+        database=DB_NAME
     )
