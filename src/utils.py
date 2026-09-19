@@ -40,6 +40,6 @@ def validar_positivo(valor,nombre: str) -> int:
 def validar_mayor_a_uno():
     return
 
-def validar_verdadero():
+def validar_booleano():
     return
 
