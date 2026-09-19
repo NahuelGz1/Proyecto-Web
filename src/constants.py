@@ -8,7 +8,16 @@ BASE_URL = '/reserva_canchas_api'
 
 # Formatos de fecha esperados
 FORMATO_FECHA = '%Y-%m-%d'
-FORMATO_FECHA_HORA = '%Y-%m-%d %H:%M:%S'
+FORMATO_FECHA_HORA_ISO = '%Y-%m-%dT%H:%M:%S.%f-03:00'
+
+# Horarios de apertura y cierre del club (08:00 a 23:00)
+HORA_APERTURA = 8
+HORA_CIERRE = 23
+
+# Duración de turnos (en horas completas)
+DURACION_MINIMA_HORAS = 1
+DURACION_MAXIMA_HORAS = 3
+
 
 # Reglas de dominio del club
 ESTADO_CONFIRMADA = 'confirmada'
