@@ -85,3 +85,25 @@ def get_cancha_por_id(cancha_id):
         return jsonify(_armar_respuesta_error(
             "INTERNAL_SERVER_ERROR", "Ocurrió un error inesperado en el servidor", str(err_inesperado)
         )), 500
+
+
+
+
+@canchas_bp.route("/canchas", methods=["POST"])
+def post_cancha():
+    pass
+
+
+@canchas_bp.route("/canchas/<int:cancha_id>", methods=["PATCH"])
+def patch_cancha(cancha_id: int):
+    pass
+
+
+@canchas_bp.route("/canchas/<int:cancha_id>", methods=["DELETE"])
+def delete_cancha(cancha_id: int):
+    pass
+
+
+@canchas_bp.route("/canchas/disponibles", methods=["GET"])
+def get_canchas_disponibles():
+    pass

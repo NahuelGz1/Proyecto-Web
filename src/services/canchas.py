@@ -14,3 +14,18 @@ def obtener_listado_canchas(args):
 
 def obtener_cancha(cancha_id):
     return obtener_cancha_por_id(cancha_id)
+
+
+def registrar_cancha(body: dict) -> dict:
+    return
+
+
+def actualizar_cancha(cancha_id: int, body: dict) -> None:
+    pass
+
+def borrar_cancha(cancha_id: int) -> None:
+    pass
+
+
+def obtener_canchas_disponibles(args: dict) -> tuple[list[dict], int, int, int]:
+    pass

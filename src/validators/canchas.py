@@ -81,7 +81,7 @@ def validar_body_nueva_cancha(body: dict) -> dict:
         errores.extend(e.args[0]["errors"])
 
     """
-    validar techada?
+    falta validar si techada es efectivamente un booleano
     """
 
     try:
@@ -102,3 +102,7 @@ def validar_body_nueva_cancha(body: dict) -> dict:
 
     }
 
+
+
+def validar_body_modificar_cancha(body: dict) -> dict:
+    pass

@@ -69,3 +69,48 @@ def obtener_cancha_por_id(cancha_id):
     finally:
         cursor.close()
         connection.close()
+
+
+def registrar_cancha():
+    return
+
+
+def existe_deporte(id_deporte: int) -> bool:
+    pass
+
+
+def crear_cancha(
+        nombre: str, id_deporte: int, precio_hora: int, techada: bool, activa: bool
+) -> int:
+    pass
+
+
+def modificar_cancha(cancha_id: int, campos: dict) -> None:
+    pass
+
+
+def tiene_reservas_asociadas(cancha_id: int) -> bool:
+    pass
+
+
+def eliminar_cancha(cancha_id: int) -> None:
+    pass
+
+
+def contar_canchas_disponibles(
+        fecha: str, hora_inicio: str, hora_fin: str, filtros: dict
+) -> int:
+    pass
+
+
+def listar_canchas_disponibles(
+        fecha: str,
+        hora_inicio: str,
+        hora_fin: str,
+        filtros: dict,
+        limit: int,
+        offset: int,
+) -> list[dict]:
+    pass
+
+
