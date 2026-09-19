@@ -19,7 +19,21 @@ def validar_string_no_vacio(valor, nombre: str) -> str:
         raise ValueError(construir_error_api(
             code=f'required.{nombre}',
             message=f"Campo requerido: '{nombre}'",
+            level='error',
             description=f"El campo '{nombre}' es obligatorio y no puede estar vacio"
         ))
 
     return str(valor).strip()
+
+
+def validar_positivo(valor,nombre: str) -> int:
+    if (valor < 0):
+        raise ValueError(construir_error_api(
+            code = 'invalid_numero',
+            message = 'valor incompatible',
+            level = 'error',
+            description = 'El numero no es positivo'
+
+        ))
+    return valor
+
