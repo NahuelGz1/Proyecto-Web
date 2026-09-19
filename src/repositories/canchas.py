@@ -69,3 +69,34 @@ def obtener_cancha_por_id(cancha_id):
     finally:
         cursor.close()
         connection.close()
+
+def existe_deporte(id_deporte):
+    connection = conexion()
+    cursor = obtener_cursor(connection)
+    try:
+        cursor.execute("SELECT id FROM deportes WHERE id = %s;", (id_deporte,))
+        return cursor.fetchone() is not None
+    finally:
+        cursor.close()
+        connection.close()
+
+def crear_cancha(datos):
+    connection = conexion()
+    cursor = obtener_cursor(connection)
+    try:
+        query = """
+            INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
+            VALUES (%s, %s, %s, %s, %s);
+        """
+        cursor.execute(query, (
+            datos["nombre"],
+            datos["id_deporte"],
+            datos["precio_hora"],
+            datos["techada"],
+            datos["activa"],
+        ))
+        connection.commit()
+        return cursor.lastrowid
+    finally:
+        cursor.close()
+        connection.close()
