@@ -37,3 +37,9 @@ def validar_positivo(valor,nombre: str) -> int:
         ))
     return valor
 
+def validar_mayor_a_uno():
+    return
+
+def validar_verdadero():
+    return
+
