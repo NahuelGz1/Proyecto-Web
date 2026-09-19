@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS reserva_canchas_club;
-USE reserva_canchas_club;
+CREATE DATABASE IF NOT EXISTS club_deportivo;
+USE club_deportivo;
 
 CREATE TABLE IF NOT EXISTS deportes (
     id INT AUTO_INCREMENT PRIMARY KEY,
