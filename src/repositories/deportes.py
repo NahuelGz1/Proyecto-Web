@@ -1,4 +1,4 @@
-from src.db import conexion
+from src.repositories.db import conexion, obtener_cursor
 
 
 def listar_deportes():
@@ -12,8 +12,7 @@ def listar_deportes():
         - Retorna una lista vacía [] si no existen registros en la tabla.
     """
     connection = conexion()
-    # dictionary=True se encarga de mapear cada fila directamente a un diccionario de Python
-    cursor = connection.cursor(dictionary=True)
+    cursor = obtener_cursor(connection)
     try:
         cursor.execute("SELECT id, nombre FROM deportes ORDER BY id ASC;")
         return cursor.fetchall()

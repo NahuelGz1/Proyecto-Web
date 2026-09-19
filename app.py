@@ -3,12 +3,14 @@ from src.constants import BASE_URL
 
 # se importan los blueprints a mano a medida que los creemos
 from src.routes.deportes import deportes_bp
+from src.routes.canchas import canchas_bp
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
 
 # registra blueprints asociandoles la base_url
 app.register_blueprint(deportes_bp, url_prefix=BASE_URL)
+app.register_blueprint(canchas_bp, url_prefix=BASE_URL)
 
 @app.route('/')
 def index():
