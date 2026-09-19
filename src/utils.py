@@ -27,7 +27,7 @@ def validar_string_no_vacio(valor, nombre: str) -> str:
 
 
 def validar_positivo(valor,nombre: str) -> int:
-    if (valor < 0):
+    if (valor <= 0):
         raise ValueError(construir_error_api(
             code = 'invalid_numero',
             message = 'valor incompatible',
