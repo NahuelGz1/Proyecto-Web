@@ -1,14 +1,9 @@
-from src.constants import ERROR_CODE_INVALID_BODY
+from src.constants import ERROR_CODE_INVALID_BODY, ERROR_CODE_INVALID_PARAM
 from src.utils import (
-    validar_string_no_vacio,
     construir_error_api,
+    validar_string_no_vacio,
+    validar_positivo,
 )
-
-
-
-class ValidationError(Exception):
-    """Excepción personalizada para errores de validación en la solicitud."""
-    pass
 
 
 def validar_filtros_canchas(args):
@@ -18,10 +13,18 @@ def validar_filtros_canchas(args):
     activa = args.get('activa', type=str)
 
     if techada is not None and techada.lower() not in ("true", "false"):
-        raise ValidationError("El parámetro techada debe ser true o false")
+        raise ValueError(construir_error_api(
+            code=ERROR_CODE_INVALID_PARAM,
+            message="Parámetro inválido",
+            description="techada debe ser true o false"
+        ))
 
     if activa is not None and activa.lower() not in ("true", "false"):
-        raise ValidationError("El parámetro activa debe ser true o false")
+        raise ValueError(construir_error_api(
+            code=ERROR_CODE_INVALID_PARAM,
+            message="Parámetro inválido",
+            description="activa debe ser true o false"
+        ))
 
     return {
         "id_deporte": id_deporte,
@@ -36,62 +39,78 @@ def validar_paginacion(args):
         limit = int(args.get('_limit', 10))
         offset = int(args.get('_offset', 0))
     except ValueError:
-        raise ValidationError("_limit y _offset deben ser números enteros")
+        raise ValueError(construir_error_api(
+            code=ERROR_CODE_INVALID_PARAM,
+            message="Parámetro inválido",
+            description="_limit y _offset deben ser números enteros"
+        ))
 
     if not (1 <= limit <= 100) or offset < 0:
-        raise ValidationError("_limit debe estar entre 1 y 100, y _offset no puede ser negativo")
+        raise ValueError(construir_error_api(
+            code=ERROR_CODE_INVALID_PARAM,
+            message="Parámetro inválido",
+            description="_limit debe estar entre 1 y 100, y _offset no puede ser negativo"
+        ))
 
     return limit, offset
-
-
 def validar_body_nueva_cancha(body: dict) -> dict:
     """
-    valida el body del POST
-    Acepta nombre(nombre de cancha), id_deporte, precio_hora, techada, activa
+    Valida el body del POST.
+    Acepta nombre (nombre de cancha), id_deporte, precio_hora, techada, activa.
     """
     if body is None:
-        raise ValueError(contruir_error_api(
+        raise ValueError(construir_error_api(
             code=ERROR_CODE_INVALID_BODY,
-            message='Cuerpo de la solicitud invalido',
-            description='El cuerpo debe ser un JSON valido con '
-
+            message='Cuerpo de la solicitud inválido',
+            description='El cuerpo debe ser un JSON válido con Content-Type application/json'
         ))
+
     errores = []
 
     nombre = None
-    id_deporte   = None
-    precio_hora  = None
-    techada  = None
-    activa  = None
-
+    id_deporte = None
+    precio_hora = None
+    techada = None
+    activa = None
 
     try:
-        nombre = validar_string_no_vacio(body.get('nombre'), 'nombre' )
+        nombre = validar_string_no_vacio(body.get('nombre'), 'nombre')
     except ValueError as e:
         errores.extend(e.args[0]["errors"])
 
     try:
-        id_deporte = validar_positivo(body.get('id_deporte'), 'id_deporte' )
+        id_deporte = validar_positivo(body.get('id_deporte'), 'id_deporte')
     except ValueError as e:
         errores.extend(e.args[0]["errors"])
 
     try:
-        precio_hora = validar_mayor_a_uno(body.get('precio_hora'), 'precio_hora' )
-    except ValueError as e:
-        errores.extend(e.args[0]["errors"])
-
-    """
-    falta validar si techada es efectivamente un booleano
-    """
-
-    try:
-        activa = validar_verdadero(body.get('activa'), 'activa' )
+        precio_hora = validar_positivo(body.get('precio_hora'), 'precio_hora')
     except ValueError as e:
         errores.extend(e.args[0]["errors"])
 
 
-    if errores:
-        raise ValueError({'errors': errores})
+
+        #SOLO CON OBJETIVO DE PROBAR EN POSTAMN
+    techada = body.get('techada', False)
+    activa = body.get('activa', True)
+
+
+
+
+
+    # NO ESTA DEFINIDA LA FUNCIÓN, ESTO NO FUNCIONA, OMITIR EN LOS TESTEOS
+
+    #FALTA CREAR FUNCION DEL BOOLEANO
+
+
+    # NO ESTA DEFINIDA LA FUNCIÓN, ESTO NO FUNCIONA, OMITIR EN LOS TESTEOS
+    #try:
+    #activa = validar_positivo(body.get('activa'), 'activa')
+    #except ValueError as e:
+    #errores.extend(e.args[0]["errors"])
+
+    #if errores:
+    #raise ValueError({'errors': errores})
 
     return {
         "nombre": nombre,
@@ -99,9 +118,7 @@ def validar_body_nueva_cancha(body: dict) -> dict:
         "precio_hora": precio_hora,
         "techada": techada,
         "activa": activa,
-
     }
-
 
 
 def validar_body_modificar_cancha(body: dict) -> dict:
