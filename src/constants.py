@@ -35,6 +35,7 @@ DB_URL      = f'mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_POR
 # Codigos de error
 ERROR_CODE_INVALID_BODY        = 'invalid.body'
 ERROR_CODE_INVALID_FECHA       = 'invalid.fecha'
+ERROR_CODE_INVALID_PARAM       = 'invalid.param'
 ERROR_CODE_RESERVA_NOT_FOUND   = 'reserva.not.found'
 ERROR_CODE_SOCIO_NOT_FOUND     = 'socio.not.found'
 ERROR_CODE_CANCHA_NOT_FOUND    = 'cancha.not.found'
