@@ -100,3 +100,73 @@ def crear_cancha(datos):
     finally:
         cursor.close()
         connection.close()
+
+def registrar_cancha():
+    return
+
+
+def existe_deporte(id_deporte: int) -> bool:
+    connection = conexion()
+    cursor = obtener_cursor(connection)
+    try:
+        cursor.execute("SELECT id FROM deportes WHERE id = %s;", (id_deporte,))
+        return cursor.fetchone() is not None
+    finally:
+        cursor.close()
+        connection.close()
+
+
+def crear_cancha(
+    nombre: str, id_deporte: int, precio_hora: int, techada: bool, activa: bool
+) -> int:
+    connection = conexion()
+    cursor = obtener_cursor(connection)
+    try:
+        query = """
+            INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
+            VALUES (%s, %s, %s, %s, %s);
+        """
+        cursor.execute(query, (
+            nombre,
+            id_deporte,
+            precio_hora,
+            techada,
+            activa,
+        ))
+        connection.commit()
+        return cursor.lastrowid
+    finally:
+        cursor.close()
+        connection.close()
+        
+
+def modificar_cancha(cancha_id: int, campos: dict) -> None:
+    pass
+
+
+def tiene_reservas_asociadas(cancha_id: int) -> bool:
+    pass
+
+
+def eliminar_cancha(cancha_id: int) -> None:
+    pass
+
+
+def contar_canchas_disponibles(
+        fecha: str, hora_inicio: str, hora_fin: str, filtros: dict
+) -> int:
+    pass
+
+
+def listar_canchas_disponibles(
+        fecha: str,
+        hora_inicio: str,
+        hora_fin: str,
+        filtros: dict,
+        limit: int,
+        offset: int,
+) -> list[dict]:
+    pass
+
+
+

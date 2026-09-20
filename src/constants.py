@@ -8,7 +8,16 @@ BASE_URL = '/reserva_canchas_api'
 
 # Formatos de fecha esperados
 FORMATO_FECHA = '%Y-%m-%d'
-FORMATO_FECHA_HORA = '%Y-%m-%d %H:%M:%S'
+FORMATO_FECHA_HORA_ISO = '%Y-%m-%dT%H:%M:%S.%f-03:00'
+
+# Horarios de apertura y cierre del club (08:00 a 23:00)
+HORA_APERTURA = 8
+HORA_CIERRE = 23
+
+# Duración de turnos (en horas completas)
+DURACION_MINIMA_HORAS = 1
+DURACION_MAXIMA_HORAS = 3
+
 
 # Reglas de dominio del club
 ESTADO_CONFIRMADA = 'confirmada'
@@ -26,6 +35,7 @@ DB_URL      = f'mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_POR
 # Codigos de error
 ERROR_CODE_INVALID_BODY        = 'invalid.body'
 ERROR_CODE_INVALID_FECHA       = 'invalid.fecha'
+ERROR_CODE_INVALID_PARAM       = 'invalid.param'
 ERROR_CODE_RESERVA_NOT_FOUND   = 'reserva.not.found'
 ERROR_CODE_SOCIO_NOT_FOUND     = 'socio.not.found'
 ERROR_CODE_CANCHA_NOT_FOUND    = 'cancha.not.found'
