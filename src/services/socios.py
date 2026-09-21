@@ -1,5 +1,5 @@
 from src.repositories.socios import listar_socios
-from utils import validar_limit, validar_no_negativo, validar_booleano, validar_positivo
+from src.utils import validar_limit, validar_no_negativo, validar_booleano, validar_positivo
 
 
 def obtener_socios(nombre, activo, limit, offset):

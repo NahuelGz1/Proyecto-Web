@@ -5,7 +5,6 @@ from src.constants import BASE_URL
 from src.routes.deportes import deportes_bp
 from src.routes.socios import socios_bp
 from src.routes.canchas import canchas_bp
-from src.routes.socios import socios_bp
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
@@ -14,7 +13,6 @@ app.json.ensure_ascii = False
 app.register_blueprint(deportes_bp, url_prefix=BASE_URL)
 app.register_blueprint(socios_bp, url_prefix=BASE_URL)
 app.register_blueprint(canchas_bp, url_prefix=BASE_URL)
-app.register_blueprint(socios_bp, url_prefix=BASE_URL)
 
 @app.route('/')
 def index():
