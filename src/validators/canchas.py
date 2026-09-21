@@ -122,4 +122,14 @@ def validar_body_nueva_cancha(body: dict) -> dict:
 
 
 def validar_body_modificar_cancha(body: dict) -> dict:
-    pass
+    if not body:
+        raise ValueError(construir_error_api(
+
+        code=ERROR_CODE_INVALID_BODY,
+        message="Solicitud invalida"
+        description="no puede quedar vacio en una actualización"
+        
+        ))
+    
+        errores = []
+        campos_actualizados = {}
