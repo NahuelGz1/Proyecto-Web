@@ -55,3 +55,5 @@ def listar_socios(nombre, activo, limit, offset):
     finally:
         cursor.close()
         connection.close()
+
+
