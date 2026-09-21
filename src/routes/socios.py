@@ -45,3 +45,19 @@ def get_socios():
     }
 
     return jsonify({"socios": socios, "_links": enlaces}), 200
+
+
+@socios_bp.route('/socios', methods=['POST'])
+def alta_socio():
+    try:
+        datos = request.get_json()
+        nuevo_socio = crear_socio(datos)
+        return jsonify(nuevo_socio), 201
+
+    except ValueError as err:
+        return jsonify(err.args[0]), 400
+
+    except Exception as err_inesperado:
+        return jsonify({"errors": [{"message": "Error inesperado en el servidor"}]}), 500
+
+    
