@@ -3,6 +3,9 @@ from src.utils import (
     construir_error_api,
     validar_string_no_vacio,
     validar_positivo,
+    validar_mayor_a_uno,
+    validar_booleano,
+
 )
 
 
@@ -53,6 +56,8 @@ def validar_paginacion(args):
         ))
 
     return limit, offset
+
+
 def validar_body_nueva_cancha(body: dict) -> dict:
     """
     Valida el body del POST.
@@ -84,33 +89,26 @@ def validar_body_nueva_cancha(body: dict) -> dict:
         errores.extend(e.args[0]["errors"])
 
     try:
-        precio_hora = validar_positivo(body.get('precio_hora'), 'precio_hora')
+        precio_hora = validar_mayor_a_uno(body.get('precio_hora'), 'precio_hora')
     except ValueError as e:
         errores.extend(e.args[0]["errors"])
 
 
 
-        #SOLO CON OBJETIVO DE PROBAR EN POSTAMN
-    techada = body.get('techada', False)
-    activa = body.get('activa', True)
+    try:
+        techada = validar_booleano(body.get('techada'), 'techada', default=False)
+    except ValueError as e:
+        errores.extend(e.args[0]["errors"])
 
+    try:
+        activa = validar_booleano(body.get('activa'), 'activa', default=True)
+    except ValueError as e:
+        errores.extend(e.args[0]["errors"])
 
+##### CHEQUEAR ESTA LINEA BLOQUE LISANDRO ######
 
-
-
-    # NO ESTA DEFINIDA LA FUNCIÓN, ESTO NO FUNCIONA, OMITIR EN LOS TESTEOS
-
-    #FALTA CREAR FUNCION DEL BOOLEANO
-
-
-    # NO ESTA DEFINIDA LA FUNCIÓN, ESTO NO FUNCIONA, OMITIR EN LOS TESTEOS
-    #try:
-    #activa = validar_positivo(body.get('activa'), 'activa')
-    #except ValueError as e:
-    #errores.extend(e.args[0]["errors"])
-
-    #if errores:
-    #raise ValueError({'errors': errores})
+    if errores:
+        raise ValueError({'errors': errores})
 
     return {
         "nombre": nombre,
