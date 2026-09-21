@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME} "
 
 # URL base de la API
 BASE_URL = '/reserva_canchas_api'
@@ -33,7 +32,7 @@ DB_PORT     = int(os.getenv('DB_PORT', '3306'))
 DB_USER     = os.getenv('DB_USER', 'root')
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DB_NAME     = os.getenv('DB_NAME', 'reserva_canchas_club')
-DB_URL      = f'mysql+mysqlconnector://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME} "
 
 # Codigos de error
 ERROR_CODE_INVALID_BODY        = 'invalid.body'

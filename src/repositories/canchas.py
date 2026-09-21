@@ -87,11 +87,14 @@ def modificar_cancha(cancha_id: int, campos: dict) -> None:
 
 
 def tiene_reservas_asociadas(cancha_id: int) -> bool:
-    pass
+    sql = "SELECT COUNT(*) AS total FROM reservas WHERE id_cancha = :cancha_id;"
+    filas = ejecutar_consulta(sql, {"cancha_id": cancha_id})
+    return filas[0]["total"] > 0 if filas else False
 
 
 def eliminar_cancha(cancha_id: int) -> None:
-    pass
+    sql = "DELETE FROM canchas WHERE id = :cancha_id;"
+    ejecutar_mutacion(sql, {"cancha_id": cancha_id})
 
 
 def contar_canchas_disponibles(
