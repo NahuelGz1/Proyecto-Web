@@ -14,7 +14,6 @@ app.json.ensure_ascii = False
 app.register_blueprint(deportes_bp, url_prefix=BASE_URL)
 app.register_blueprint(socios_bp, url_prefix=BASE_URL)
 app.register_blueprint(canchas_bp, url_prefix=BASE_URL)
-app.register_blueprint(socios_bp, url_prefix=BASE_URL)
 
 @app.route('/')
 def index():

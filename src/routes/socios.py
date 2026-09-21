@@ -1,4 +1,3 @@
-from flask import Blueprint, jsonify, request
 import mysql.connector
 from src.services.socios import obtener_socios
 from flask import Blueprint, jsonify, request, url_for

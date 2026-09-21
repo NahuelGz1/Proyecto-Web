@@ -1,4 +1,4 @@
-from src.db import conexion
+from src.repositories.db import conexion
 
 
 def listar_socios(nombre, activo, limit, offset):
