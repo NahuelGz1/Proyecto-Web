@@ -97,21 +97,55 @@ def eliminar_cancha(cancha_id: int) -> None:
     ejecutar_mutacion(sql, {"cancha_id": cancha_id})
 
 
-def contar_canchas_disponibles(
-        fecha: str, hora_inicio: str, hora_fin: str, filtros: dict
-) -> int:
-    pass
 
 
-def listar_canchas_disponibles(
-        fecha: str,
-        hora_inicio: str,
-        hora_fin: str,
-        filtros: dict,
-        limit: int,
-        offset: int,
-) -> list[dict]:
-    pass
+def _armar_where_disponibles(fecha, hora_inicio, hora_fin, filtros):
+    condiciones = ["activa = 1"]
+    parametros = {
+        "inicio": f"{fecha} {hora_inicio}:00",
+        "fin": f"{fecha} {hora_fin}:00",
+    }
+
+    if filtros.get("id_deporte") is not None:
+        condiciones.append("id_deporte = :id_deporte")
+        parametros["id_deporte"] = filtros["id_deporte"]
+
+    if filtros.get("techada") is not None:
+        condiciones.append("techada = :techada")
+        parametros["techada"] = filtros["techada"]
+
+    condiciones.append("""
+        id NOT IN (
+            SELECT id_cancha FROM reservas
+            WHERE estado = 'confirmada'
+              AND fecha_hora_inicio < :fin
+              AND fecha_hora_fin > :inicio
+        )
+    """)
+
+    where_sql = f"WHERE {' AND '.join(condiciones)}"
+    return where_sql, parametros
+
+
+def contar_canchas_disponibles(fecha: str, hora_inicio: str, hora_fin: str, filtros: dict) -> int:
+    where_sql, params = _armar_where_disponibles(fecha, hora_inicio, hora_fin, filtros)
+    sql = f"SELECT COUNT(*) AS total FROM canchas {where_sql};"
+    filas = ejecutar_consulta(sql, params)
+    return filas[0]["total"] if filas else 0
+
+
+def listar_canchas_disponibles(fecha: str, hora_inicio: str, hora_fin: str, filtros: dict, limit: int, offset: int) -> list[dict]:
+    where_sql, params = _armar_where_disponibles(fecha, hora_inicio, hora_fin, filtros)
+    params["limit"] = limit
+    params["offset"] = offset
+    sql = f"""
+        SELECT id, nombre, id_deporte, precio_hora, techada, activa
+        FROM canchas
+        {where_sql}
+        ORDER BY id ASC
+        LIMIT :limit OFFSET :offset;
+    """
+    return ejecutar_consulta(sql, params)
 
 
 

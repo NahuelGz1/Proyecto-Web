@@ -4,7 +4,8 @@ from src.repositories.canchas import contar_canchas, listar_canchas, obtener_can
 from src.validators.canchas import validar_filtros_canchas, validar_paginacion
 from src.repositories.canchas import existe_deporte, crear_cancha
 from src.validators.canchas import validar_body_nueva_cancha
-from src.utils import construir_error_api
+from src.validators.canchas import validar_disponibilidad
+from src.repositories.canchas import contar_canchas_disponibles, listar_canchas_disponibles
 
 def obtener_listado_canchas(args):
     filtros = validar_filtros_canchas(args)
@@ -56,5 +57,18 @@ def borrar_cancha(cancha_id: int) -> None:
     pass
 
 
-def obtener_canchas_disponibles(args: dict) -> tuple[list[dict], int, int, int]:
-    pass
+
+
+
+
+def obtener_canchas_disponibles(args):
+
+    datos = validar_disponibilidad(args)
+    limit, offset = validar_paginacion(args)
+
+    filtros = {"id_deporte": datos["id_deporte"], "techada": datos["techada"]}
+
+    total = contar_canchas_disponibles(datos["fecha"], datos["hora_inicio"], datos["hora_fin"], filtros)
+    canchas = listar_canchas_disponibles(datos["fecha"], datos["hora_inicio"], datos["hora_fin"], filtros, limit, offset)
+
+    return canchas, total, limit, offset
