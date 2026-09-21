@@ -1,109 +1,85 @@
-from src.repositories.db import conexion, obtener_cursor
+from src.repositories.db import ejecutar_consulta, ejecutar_mutacion
 
 
-def _armar_where(filtros):
+def _armar_where(filtros: dict):
     condiciones = []
-    parametros = []
+    parametros = {}
 
-    if filtros["id_deporte"] is not None:
-        condiciones.append("id_deporte = %s")
-        parametros.append(filtros["id_deporte"])
+    if filtros.get("id_deporte") is not None:
+        condiciones.append("id_deporte = :id_deporte")
+        parametros["id_deporte"] = filtros["id_deporte"]
 
-    if filtros["nombre"]:
-        condiciones.append("nombre LIKE %s")
-        parametros.append(f"%{filtros['nombre']}%")
+    if filtros.get("nombre"):
+        condiciones.append("nombre LIKE :nombre")
+        parametros["nombre"] = f"%{filtros['nombre']}%"
 
-    if filtros["techada"] is not None:
-        condiciones.append("techada = %s")
-        parametros.append(filtros["techada"])
+    if filtros.get("techada") is not None:
+        condiciones.append("techada = :techada")
+        parametros["techada"] = filtros["techada"]
 
-    if filtros["activa"] is not None:
-        condiciones.append("activa = %s")
-        parametros.append(filtros["activa"])
+    if filtros.get("activa") is not None:
+        condiciones.append("activa = :activa")
+        parametros["activa"] = filtros["activa"]
 
     where_sql = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
     return where_sql, parametros
 
 
-def contar_canchas(filtros):
+def contar_canchas(filtros: dict) -> int:
     where_sql, params = _armar_where(filtros)
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        cursor.execute(f"SELECT COUNT(*) AS total FROM canchas {where_sql};", tuple(params))
-        resultado = cursor.fetchone()
-        return resultado["total"]
-    finally:
-        cursor.close()
-        connection.close()
+    sql = f"SELECT COUNT(*) AS total FROM canchas {where_sql};"
+    filas = ejecutar_consulta(sql, params)
+    return filas[0]["total"] if filas else 0
 
 
-def listar_canchas(filtros, limit, offset):
+def listar_canchas(filtros: dict, limit: int, offset: int) -> list[dict]:
     where_sql, params = _armar_where(filtros)
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        query = f"""
-            SELECT id, nombre, id_deporte, precio_hora, techada, activa
-            FROM canchas
-            {where_sql}
-            ORDER BY id ASC
-            LIMIT %s OFFSET %s;
-        """
-        cursor.execute(query, tuple(params) + (limit, offset))
-        return cursor.fetchall()
-    finally:
-        cursor.close()
-        connection.close()
+    params["limit"] = limit
+    params["offset"] = offset
+
+    sql = f"""
+        SELECT id, nombre, id_deporte, precio_hora, techada, activa
+        FROM canchas
+        {where_sql}
+        ORDER BY id ASC
+        LIMIT :limit OFFSET :offset;
+    """
+    return ejecutar_consulta(sql, params)
 
 
-def obtener_cancha_por_id(cancha_id):
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        cursor.execute(
-            "SELECT id, nombre, id_deporte, precio_hora, techada, activa FROM canchas WHERE id = %s;",
-            (cancha_id,)
-        )
-        return cursor.fetchone()
-    finally:
-        cursor.close()
-        connection.close()
+def obtener_cancha_por_id(cancha_id: int) -> dict:
+    sql = """
+          SELECT id, nombre, id_deporte, precio_hora, techada, activa
+          FROM canchas
+          WHERE id = :cancha_id; \
+          """
+    filas = ejecutar_consulta(sql, {"cancha_id": cancha_id})
+    return filas[0] if filas else None
 
 
 def existe_deporte(id_deporte: int) -> bool:
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        cursor.execute("SELECT id FROM deportes WHERE id = %s;", (id_deporte,))
-        return cursor.fetchone() is not None
-    finally:
-        cursor.close()
-        connection.close()
+    sql = "SELECT id FROM deportes WHERE id = :id_deporte;"
+    filas = ejecutar_consulta(sql, {"id_deporte": id_deporte})
+    return len(filas) > 0
 
 
 def crear_cancha(
-    nombre: str, id_deporte: int, precio_hora: int, techada: bool, activa: bool
+        nombre: str, id_deporte: int, precio_hora: int, techada: bool, activa: bool
 ) -> int:
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        query = """
-            INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
-            VALUES (%s, %s, %s, %s, %s);
-        """
-        cursor.execute(query, (
-            nombre,
-            id_deporte,
-            precio_hora,
-            techada,
-            activa,
-        ))
-        connection.commit()
-        return cursor.lastrowid
-    finally:
-        cursor.close()
-        connection.close()
+    sql = """
+          INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
+          VALUES (:nombre, :id_deporte, :precio_hora, :techada, :activa); \
+          """
+    return ejecutar_mutacion(
+        sql,
+        {
+            "nombre": nombre,
+            "id_deporte": id_deporte,
+            "precio_hora": precio_hora,
+            "techada": techada,
+            "activa": activa,
+        },
+    )
         
 
 def modificar_cancha(cancha_id: int, campos: dict) -> None:

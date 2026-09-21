@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+DB_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME} "
+
 # URL base de la API
 BASE_URL = '/reserva_canchas_api'
 
