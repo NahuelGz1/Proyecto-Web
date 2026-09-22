@@ -56,4 +56,11 @@ def listar_socios(nombre, activo, limit, offset):
         cursor.close()
         connection.close()
 
+def insertar_socio(nombre: str, email: str, activo: bool) -> int:
+    connection = conexion()
+    cursor = connection.cursor()
+
+    try:
+        query = 
+
 
