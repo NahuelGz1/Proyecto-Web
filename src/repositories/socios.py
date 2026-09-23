@@ -1,4 +1,4 @@
-from src.repositories.db import conexion
+from src.repositories.db import conexion, obtener_cursor
 
 
 def listar_socios(nombre, activo, limit, offset):
@@ -52,6 +52,22 @@ def listar_socios(nombre, activo, limit, offset):
 
         return socios, total
 
+    finally:
+        cursor.close()
+        connection.close()
+
+def insertar_socio(nombre: str, email: str, activo: bool) -> int:
+    connection = conexion()
+    cursor = obtener_cursor(connection)
+
+    try:
+        query = """
+            INSERT INTO socios (nombre, email, activo)
+            VALUES (%s, %s, %s);
+        """
+        cursor.execute(query, (nombre, email, activo))
+        connection.commit()
+        return cursor.lastrowid
     finally:
         cursor.close()
         connection.close()

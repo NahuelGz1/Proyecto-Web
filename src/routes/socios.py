@@ -1,6 +1,5 @@
 import mysql.connector
-from src.services.socios import obtener_socios
-from src.services.socios import obtener_socio_por_id
+from src.services.socios import obtener_socio_por_id, crear_socio, obtener_socios
 from src.utils import construir_error_api
 from flask import Blueprint, jsonify, request, url_for
 
@@ -59,6 +58,7 @@ def alta_socio():
         return jsonify(err.args[0]), 400
 
     except Exception as err_inesperado:
+        print(err_inesperado)
         return jsonify({"errors": [{"message": "Error inesperado en el servidor"}]}), 500
 
 @socios_bp.route('/socios/<int:id>', methods=['GET'])
