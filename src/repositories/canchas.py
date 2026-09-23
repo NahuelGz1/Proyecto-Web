@@ -81,9 +81,24 @@ def crear_cancha(
         },
     )
         
+# 23/9 ----------------------------------------------------------------------------------- (PATCH)
+#utiliza el diccionario campos y crea una lista con los valores del mismo, la lista esta dividida por comas y en columnas
+#esto arma el UPDATE y despues lo manda al set
 
 def modificar_cancha(cancha_id: int, campos: dict) -> None:
-    pass
+    set_clauses = [f"{campo} = :{campo}" for campo in campos.keys()]
+    set_sql = ", ".join(set_clauses)
+
+    sql = f"""
+        UPDATE canchas
+        SET {set_sql}
+        WHERE id = :cancha_id;
+    """
+
+    parametros = dict(campos)
+    parametros["cancha_id"] = cancha_id
+
+    ejecutar_mutacion(sql, parametros)
 
 
 def tiene_reservas_asociadas(cancha_id: int) -> bool:
