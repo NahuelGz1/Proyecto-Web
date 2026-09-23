@@ -27,7 +27,7 @@ def validar_string_no_vacio(valor, nombre: str) -> str:
 
 
 def validar_positivo(valor,nombre: str) -> int:
-    if (valor <= 0):
+    if valor is None or valor <=0:
         raise ValueError(construir_error_api(
             code = 'invalid_numero',
             message = 'valor incompatible',
@@ -37,9 +37,48 @@ def validar_positivo(valor,nombre: str) -> int:
         ))
     return valor
 
-def validar_mayor_a_uno():
-    return
+def validar_mayor_a_uno(valor, nombre: str) -> int:
+    if valor is None or valor <= 1:
+        raise ValueError(construir_error_api(
+            code = 'invalid_numero',
+            message = 'valor incompatible',
+            level = 'error',
+            description = 'El numero no es mayor a uno'
+            
+        ))
+    return valor
 
-def validar_booleano():
-    return
+def validar_booleano(valor, nombre: str, default: bool) -> bool:
+    if valor is None:
+        return default
 
+    if valor is not True and valor is not False:
+        raise ValueError(construir_error_api(
+            code=f'invalid.{nombre}',
+            message=f"Campo inválido: '{nombre}'",
+            level='error',
+            description=f"El campo '{nombre}' debe ser true o false"
+        ))
+
+    return valor
+
+def validar_no_negativo(valor, nombre: str) -> int:
+    if valor is None or valor < 0:
+        raise ValueError(construir_error_api(
+            code ='invalid_numero',
+            message ='valor incompatible',
+            level ='error',
+            description ='El numero es negativo'
+        ))
+    return valor
+
+
+def validar_limit(valor, nombre: str) -> int:
+    if valor is None or valor < 1 or valor > 100:
+        raise ValueError(construir_error_api(
+            code ='invalid_numero',
+            message ='valor incompatible',
+            level='error',
+            description ='El parametro _limit debe ser un numero entre 1 y 100'
+        ))
+    return valor
