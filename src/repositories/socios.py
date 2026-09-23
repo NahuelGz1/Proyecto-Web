@@ -55,3 +55,28 @@ def listar_socios(nombre, activo, limit, offset):
     finally:
         cursor.close()
         connection.close()
+
+def buscar_socio_por_id(id):
+    connection = conexion()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            """
+            SELECT id, nombre, email, activo
+            FROM socios
+            WHERE id = %s;
+            """,
+            (id,)
+        )
+
+        socio = cursor.fetchone()
+
+        if socio:
+            socio["activo"] = bool(socio["activo"])
+
+        return socio
+
+    finally:
+        cursor.close()
+        connection.close()

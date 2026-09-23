@@ -1,4 +1,5 @@
 from src.repositories.socios import listar_socios
+from src.repositories.socios import buscar_socio_por_id
 from src.utils import validar_limit, validar_no_negativo, validar_booleano, validar_positivo, validar_string_no_vacio
 
 
@@ -15,5 +16,6 @@ def crear_socio(datos: dict) -> dict:
     email = validar_string_no_vacio(datos.get('email'), 'email')
     activo = True
 
-
-
+def obtener_socio_por_id(id):
+    
+    return buscar_socio_por_id(id)

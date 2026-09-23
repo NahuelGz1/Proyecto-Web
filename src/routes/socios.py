@@ -1,5 +1,7 @@
 import mysql.connector
 from src.services.socios import obtener_socios
+from src.services.socios import obtener_socio_por_id
+from src.utils import construir_error_api
 from flask import Blueprint, jsonify, request, url_for
 
 socios_bp = Blueprint('socios', __name__)
@@ -59,4 +61,27 @@ def alta_socio():
     except Exception as err_inesperado:
         return jsonify({"errors": [{"message": "Error inesperado en el servidor"}]}), 500
 
-    
+@socios_bp.route('/socios/<int:id>', methods=['GET'])
+def get_socio(id):
+    try:
+        socio = obtener_socio_por_id(id)
+
+        if socio is None:
+            error404 = construir_error_api(
+                code='socio.not.found',
+                message='Socio no encontrado',
+                level='error',
+                description=f'No existe un socio con id {id}'
+            )
+            return jsonify(error404), 404
+        return jsonify(socio), 200
+
+    except Exception:
+        error500 = construir_error_api(
+            code='internal.server.error',
+            message='Error interno del servidor',
+            level='error',
+            description='Ocurrió un error inesperado en el servidor'
+        )
+
+        return jsonify(error500), 500
