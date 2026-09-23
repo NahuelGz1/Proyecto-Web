@@ -105,6 +105,8 @@ def validar_body_nueva_cancha(body: dict) -> dict:
     except ValueError as e:
         errores.extend(e.args[0]["errors"])
 
+
+# 23/9 ESTO ME QUEDA POR VERLO (licha) ------------------------------------------------------------------ 
 ##### CHEQUEAR ESTA LINEA BLOQUE LISANDRO ######
 
     if errores:
@@ -118,16 +120,53 @@ def validar_body_nueva_cancha(body: dict) -> dict:
         "activa": activa,
     }
 
+# 23/9 ----------------------------------------------------------------------------------- (PATCH)
 
+# es la función mas grande, recibe el body del patch con los campos a modificar, en caso de que no esten completos los omite
+#corta con errores si hay ingresos invalidos
 def validar_body_modificar_cancha(body: dict) -> dict:
     if not body:
         raise ValueError(construir_error_api(
-
-        code=ERROR_CODE_INVALID_BODY,
-        message="Solicitud invalida"
-        description="no puede quedar vacio en una actualización"
-        
+            code=ERROR_CODE_INVALID_BODY,
+            message="Solicitud invalida",
+            description="no puede quedar vacio en una actualización"
         ))
-    
-        errores = []
-        campos_actualizados = {}
+
+    errores = []
+    campos_actualizados = {}
+
+    if "nombre" in body:
+        try:
+            campos_actualizados["nombre"] = validar_string_no_vacio(body.get("nombre"), "nombre")
+        except ValueError as e:
+            errores.extend(e.args[0]["errors"])
+
+    if "precio_hora" in body:
+        try:
+            campos_actualizados["precio_hora"] = validar_mayor_a_uno(body.get("precio_hora"), "precio_hora")
+        except ValueError as e:
+            errores.extend(e.args[0]["errors"])
+
+    if "techada" in body:
+        try:
+            campos_actualizados["techada"] = validar_booleano(body.get("techada"), "techada", default=False)
+        except ValueError as e:
+            errores.extend(e.args[0]["errors"])
+
+    if "activa" in body:
+        try:
+            campos_actualizados["activa"] = validar_booleano(body.get("activa"), "activa", default=True)
+        except ValueError as e:
+            errores.extend(e.args[0]["errors"])
+
+    if not campos_actualizados:
+        raise ValueError(construir_error_api(
+            code=ERROR_CODE_INVALID_BODY,
+            message="Cuerpo de la solicitud inválido",
+            description="Debe incluirse al menos un campo válido para actualizar"
+        ))
+
+    if errores:
+        raise ValueError({'errors': errores})
+
+    return campos_actualizados
