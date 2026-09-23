@@ -45,7 +45,7 @@ def listar_canchas(filtros: dict, limit: int, offset: int) -> list[dict]:
         LIMIT :limit OFFSET :offset;
     """
     return ejecutar_consulta(sql, params)
-
+S
 
 def obtener_cancha_por_id(cancha_id: int) -> dict:
     sql = """
