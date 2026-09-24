@@ -1,7 +1,7 @@
 from src.repositories.db import conexion, obtener_cursor
 
 
-def listar_socios(nombre, activo, limit, offset):
+def listar_socios(nombre: str, activo: bool, limit: int, offset: int):
 
     connection = conexion()
     cursor = connection.cursor(dictionary=True)
@@ -96,3 +96,45 @@ def buscar_socio_por_id(id):
     finally:
         cursor.close()
         connection.close()
+
+def actualizar_socio_en_base(id: int, datos: dict) -> bool:
+    
+    connection = conexion()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        if 'nombre' in datos:
+            cursor.execute(
+                """
+                UPDATE socios
+                SET nombre = %s
+                WHERE id = %s;
+                """, 
+                (datos['nombre'], id)
+            )
+        if 'email' in datos:
+            cursor.execute(
+                """
+                UPDATE socios
+                SET email = %s
+                WHERE id = %s;
+                """, 
+                (datos['email'], id)
+            )
+        if 'activo' in datos:
+            cursor.execute(
+                """
+                UPDATE socios
+                SET activo = %s
+                WHERE id = %s;
+                """, 
+                (datos['activo'], id)
+            )
+
+        connection.commit()
+
+    finally:
+        cursor.close()
+        connection.close()
+
+    return True
