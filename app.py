@@ -1,11 +1,12 @@
 from flask import Flask
 from src.constants import BASE_URL
 
+
 # se importan los blueprints a mano a medida que los creemos
 from src.routes.deportes import deportes_bp
 from src.routes.socios import socios_bp
 from src.routes.canchas import canchas_bp
-from src.routes.socios import socios_bp
+
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
