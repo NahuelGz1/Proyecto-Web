@@ -45,11 +45,11 @@ INSERT INTO deportes (id, nombre) VALUES
 
 -- Canchas
 INSERT INTO canchas (id, nombre, id_deporte, precio_hora, techada, activa) VALUES
-    (1, 'Cancha Fútbol 5 Synthetica', 1, 15000, TRUE, TRUE),   -- Con reservas (para probar 409 al borrar)
-    (2, 'Cancha Fútbol 7 Césped',    1, 20000, FALSE, TRUE),  -- Con reservas (para probar 409 al borrar)
-    (3, 'Cancha Tenis Ladrillo',     2, 10000, FALSE, TRUE),  -- Sin reservas (para probar 204 borrado exitoso)
-    (4, 'Cancha Pádel Panorámica',   3, 12000, TRUE, TRUE),   -- Sin reservas (para probar 204 borrado exitoso)
-    (5, 'Cancha Fútbol Auxiliar',    1, 8000,  FALSE, FALSE)  -- Inactiva
+    (1, 'Cancha 1', 1, 15000, TRUE, TRUE),   -- Con reservas (para probar 409 al borrar)
+    (2, 'Cancha 2',    1, 20000, FALSE, TRUE),  -- Con reservas (para probar 409 al borrar)
+    (3, 'Cancha 3',     2, 10000, FALSE, TRUE),  -- Sin reservas (para probar 204 borrado exitoso)
+    (4, 'Cancha 4',   3, 12000, TRUE, TRUE),   -- Sin reservas (para probar 204 borrado exitoso)
+    (5, 'Cancha 5',    1, 8000,  FALSE, FALSE)  -- Inactiva
     ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
 
 -- Socios
