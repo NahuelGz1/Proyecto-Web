@@ -36,6 +36,14 @@ CREATE TABLE IF NOT EXISTS reservas (
     FOREIGN KEY (id_cancha) REFERENCES canchas(id)
 );
 
+INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa) VALUES
+('Cancha 1', 1, 1000, FALSE, TRUE),
+('Cancha 2', 1, 1000, FALSE, TRUE),
+('Cancha 3', 2, 1500, TRUE, TRUE),
+('Cancha 4', 2, 1500, TRUE, TRUE),
+('Cancha 5', 3, 1200, FALSE, TRUE);
+
+
 INSERT INTO deportes (id, nombre) VALUES 
 (1, 'Fútbol'),
 (2, 'Tenis'),
