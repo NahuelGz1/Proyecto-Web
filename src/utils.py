@@ -63,22 +63,22 @@ def validar_booleano(valor, nombre: str, default: bool) -> bool:
     return valor
 
 def validar_no_negativo(valor, nombre: str) -> int:
-    if (valor < 0):
+    if valor is None or valor < 0:
         raise ValueError(construir_error_api(
-            code = 'invalid_numero',
-            message = 'valor incompatible',
-            level = 'error',
-            description = 'El numero no es positivo'
-
+            code ='invalid_numero',
+            message ='valor incompatible',
+            level ='error',
+            description ='El numero es negativo'
         ))
+    return valor
+
 
 def validar_limit(valor, nombre: str) -> int:
-    if (valor < 1) or (valor > 100):
+    if valor is None or valor < 1 or valor > 100:
         raise ValueError(construir_error_api(
-            code = 'invalid_numero',
-            message = 'valor incompatible',
-            level = 'error',
-            description = 'El parametro _limit debe ser un numero entre 1 y 100'
-
+            code ='invalid_numero',
+            message ='valor incompatible',
+            level='error',
+            description ='El parametro _limit debe ser un numero entre 1 y 100'
         ))
-
+    return valor
