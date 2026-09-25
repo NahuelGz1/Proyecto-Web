@@ -80,7 +80,7 @@ def crear_cancha(
             "activa": activa,
         },
     )
-        
+
 
 def modificar_cancha(cancha_id: int, campos: dict) -> None:
     pass
