@@ -85,12 +85,31 @@ def validar_no_negativo(valor, nombre: str) -> int:
     return valor
 
 
-def validar_limit(valor, nombre: str) -> int:
-    if valor is None or valor < 1 or valor > 100:
-        raise ValueError(construir_error_api(
-            code ='invalid_numero',
-            message ='valor incompatible',
-            level='error',
-            description ='El parametro _limit debe ser un numero entre 1 y 100'
-        ))
     return valor
+
+def validar_limit(valor, nombre: str) -> int:
+    if valor < 1 or valor > 100:
+        raise ValueError(construir_error_api(
+            code='invalid_numero',
+            message='valor incompatible',
+            level='error',
+            description='El parametro _limit debe ser un numero entre 1 y 100'
+        ))
+
+    return valor
+
+import re
+
+def validar_email(email: str) -> str:
+    email_limpio = validar_string_no_vacio(email, 'email')
+    patron = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    if not re.match(patron, email_limpio):
+        from src.utils import construir_error_api
+        raise ValueError(construir_error_api(
+            code='invalid.email',
+            message='Formato de email inválido',
+            level='error',
+            description="El campo 'email' debe ser una dirección de correo válida"
+        ))
+        
+    return email_limpio
