@@ -6,4 +6,4 @@ __pycache__/
 *.db
 *.sqlite3
 docker-compose.yml
-.env
+.envvenv/
