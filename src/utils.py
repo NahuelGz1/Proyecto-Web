@@ -11,23 +11,29 @@ def construir_error_api(code: str, message: str, description: str, level: str = 
         }]
     }
 
+CAMPOS_BOOLEANOS = {"techada", "activa", "activo", "es_socio", "bloqueado"}
 
-def convertir_booleanos(datos: dict | list[dict] | None, campos: list[str]) -> dict | list[dict] | None:
+def _convertir_dict_booleano(d: dict) -> dict:
+    """convierte valores 0 y 1 a true y false para las claves booleanas"""
+    res = d.copy()
+    for clave, valor in res.items():
+        if clave in CAMPOS_BOOLEANOS and valor is not None:
+            res[clave] = bool(valor)
+    return res
 
+
+def convertir_booleanos(datos):
+    """procesa un solo diccionario o una lista de diccionarios unificando booleanos"""
     if datos is None:
         return None
 
     if isinstance(datos, list):
-        return [convertir_booleanos(item, campos) for item in datos]
+        return [_convertir_dict_booleano(item) for item in datos]
 
-    for campo in campos:
-        if campo in datos and datos[campo] is not None:
-            datos[campo] = bool(datos[campo])
+    if isinstance(datos, dict):
+        return _convertir_dict_booleano(datos)
 
     return datos
-
-def convertir_booleanos_cancha(cancha: dict) -> dict:
-    return convertir_booleanos(cancha, ["techada", "activa"])
 
 def validar_string_no_vacio(valor, nombre: str) -> str:
     if valor is None or not str(valor).strip():
