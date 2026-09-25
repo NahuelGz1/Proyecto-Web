@@ -1,5 +1,5 @@
-from src.repositories.db import ejecutar_consulta
-from src.utils import convertir_booleanos
+from src.repositories.db import ejecutar_consulta, ejecutar_mutacion
+
 
 def listar_socios(nombre: str, activo: bool, limit: int, offset: int):
     condiciones = []
@@ -13,118 +13,96 @@ def listar_socios(nombre: str, activo: bool, limit: int, offset: int):
         condiciones.append("activo = :activo")
         parametros["activo"] = activo
 
-    where = "WHERE " + " AND ".join(condiciones) if condiciones else ""
+    where = ""
+    if condiciones:
+        where = "WHERE " + " AND ".join(condiciones)
 
-    #traer registros paginados
-    sql_datos = f"""
+    sql_socios = f"""
         SELECT id, nombre, email, activo
         FROM socios
         {where}
         ORDER BY id ASC
         LIMIT :limit OFFSET :offset;
     """
-    params_datos = {**parametros, "limit": limit, "offset": offset}
-    socios = ejecutar_consulta(sql_datos, params_datos) or []
+    params_socios = dict(parametros)
+    params_socios["limit"] = limit
+    params_socios["offset"] = offset
 
-    # formateo de booleanos
-    socios = convertir_booleanos(socios, ["activo"])
+    socios = ejecutar_consulta(sql_socios, params_socios)
 
-    # total para paginar
+    for socio in socios:
+        socio["activo"] = bool(socio["activo"])
+
     sql_total = f"""
         SELECT COUNT(*) AS total
         FROM socios
         {where};
     """
-    res_total = ejecutar_consulta(sql_total, parametros)
-    total = res_total[0]["total"] if res_total else 0
+    resultado_total = ejecutar_consulta(sql_total, parametros)
+    total = resultado_total[0]["total"] if resultado_total else 0
 
     return socios, total
 
 
-
-    # el resto falta cambiar ----------------------------------
-
-
-
 def insertar_socio(nombre: str, email: str, activo: bool) -> int:
-    connection = conexion()
-    cursor = obtener_cursor(connection)
+    query = """
+        INSERT INTO socios (nombre, email, activo)
+        VALUES (:nombre, :email, :activo);
+    """
+    parametros = {
+        "nombre": nombre,
+        "email": email,
+        "activo": activo
+    }
+    return ejecutar_mutacion(query, parametros)
 
-    try:
-        query = """
-            INSERT INTO socios (nombre, email, activo)
-            VALUES (%s, %s, %s);
-        """
-        cursor.execute(query, (nombre, email, activo))
-        connection.commit()
-        return cursor.lastrowid
-    finally:
-        cursor.close()
-        connection.close()
 
 def buscar_socio_por_id(id):
-    connection = conexion()
-    cursor = connection.cursor(dictionary=True)
+    query = """
+        SELECT id, nombre, email, activo
+        FROM socios
+        WHERE id = :id;
+    """
+    socios = ejecutar_consulta(query, {"id": id})
 
-    try:
-        cursor.execute(
-            """
-            SELECT id, nombre, email, activo
-            FROM socios
-            WHERE id = %s;
-            """,
-            (id,)
-        )
+    if not socios:
+        return None
 
-        socio = cursor.fetchone()
+    socio = socios[0]
+    socio["activo"] = bool(socio["activo"])
 
-        if socio:
-            socio["activo"] = bool(socio["activo"])
+    return socio
 
-        return socio
-
-    finally:
-        cursor.close()
-        connection.close()
 
 def actualizar_socio_en_base(id: int, datos: dict) -> bool:
-    
-    connection = conexion()
-    cursor = connection.cursor(dictionary=True)
+    if 'nombre' in datos:
+        ejecutar_mutacion(
+            """
+            UPDATE socios
+            SET nombre = :nombre
+            WHERE id = :id;
+            """,
+            {'nombre': datos['nombre'], 'id': id}
+        )
 
-    try:
-        if 'nombre' in datos:
-            cursor.execute(
-                """
-                UPDATE socios
-                SET nombre = %s
-                WHERE id = %s;
-                """, 
-                (datos['nombre'], id)
-            )
-        if 'email' in datos:
-            cursor.execute(
-                """
-                UPDATE socios
-                SET email = %s
-                WHERE id = %s;
-                """, 
-                (datos['email'], id)
-            )
-        if 'activo' in datos:
-            cursor.execute(
-                """
-                UPDATE socios
-                SET activo = %s
-                WHERE id = %s;
-                """, 
-                (datos['activo'], id)
-            )
+    if 'email' in datos:
+        ejecutar_mutacion(
+            """
+            UPDATE socios
+            SET email = :email
+            WHERE id = :id;
+            """,
+            {'email': datos['email'], 'id': id}
+        )
 
-        connection.commit()
-
-    finally:
-        cursor.close()
-        connection.close()
+    if 'activo' in datos:
+        ejecutar_mutacion(
+            """
+            UPDATE socios
+            SET activo = :activo
+            WHERE id = :id;
+            """,
+            {'activo': datos['activo'], 'id': id}
+        )
 
     return True
