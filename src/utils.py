@@ -14,6 +14,18 @@ def construir_error_api(code: str, message: str, description: str, level: str = 
     }
 
 
+def convertir_booleanos_cancha(cancha: dict) -> dict:
+    """Convierte los campos booleanos de una cancha al tipo bool de Python."""
+    cancha["techada"] = bool(cancha["techada"])
+    cancha["activa"] = bool(cancha["activa"])
+    return cancha
+
+
+def convertir_booleanos_canchas(canchas: list[dict]) -> list[dict]:
+    """Convierte los campos booleanos de una lista de canchas."""
+    return [convertir_booleanos_cancha(cancha) for cancha in canchas]
+
+
 def validar_string_no_vacio(valor, nombre: str) -> str:
     if valor is None or not str(valor).strip():
         raise ValueError(construir_error_api(
