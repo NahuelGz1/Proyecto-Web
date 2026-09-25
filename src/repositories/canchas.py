@@ -1,5 +1,5 @@
 from src.repositories.db import ejecutar_consulta, ejecutar_mutacion
-from src.utils import convertir_booleanos_cancha, convertir_booleanos_canchas
+from src.utils import convertir_booleanos
 
 
 def _armar_where(filtros: dict):
@@ -45,17 +45,16 @@ def listar_canchas(filtros: dict, limit: int, offset: int) -> list[dict]:
         ORDER BY id ASC
         LIMIT :limit OFFSET :offset;
     """
-    return convertir_booleanos_canchas(ejecutar_consulta(sql, params))
-
+    return convertir_booleanos(ejecutar_consulta(sql, params))
 
 def obtener_cancha_por_id(cancha_id: int) -> dict:
     sql = """
           SELECT id, nombre, id_deporte, precio_hora, techada, activa
           FROM canchas
-          WHERE id = :cancha_id; \
+          WHERE id = :cancha_id;
           """
     filas = ejecutar_consulta(sql, {"cancha_id": cancha_id})
-    return convertir_booleanos_cancha(filas[0]) if filas else None
+    return convertir_booleanos(filas[0]) if filas else None
 
 
 def existe_deporte(id_deporte: int) -> bool:
@@ -69,7 +68,7 @@ def crear_cancha(
 ) -> int:
     sql = """
           INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
-          VALUES (:nombre, :id_deporte, :precio_hora, :techada, :activa); \
+          VALUES (:nombre, :id_deporte, :precio_hora, :techada, :activa);
           """
     return ejecutar_mutacion(
         sql,
@@ -161,6 +160,6 @@ def listar_canchas_disponibles(fecha: str, hora_inicio: str, hora_fin: str, filt
         ORDER BY id ASC
         LIMIT :limit OFFSET :offset;
     """
-    return convertir_booleanos_canchas(ejecutar_consulta(sql, params))
+    return convertir_booleanos(ejecutar_consulta(sql, params))
 
 

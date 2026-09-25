@@ -1,6 +1,4 @@
-
-
-
+import re
 
 def construir_error_api(code: str, message: str, description: str, level: str = 'error') -> dict:
     """Construye un payload de error compatible con el resto de la API."""
@@ -13,18 +11,29 @@ def construir_error_api(code: str, message: str, description: str, level: str = 
         }]
     }
 
+CAMPOS_BOOLEANOS = {"techada", "activa", "activo", "es_socio", "bloqueado"}
 
-def convertir_booleanos_cancha(cancha: dict) -> dict:
-    """Convierte los campos booleanos de una cancha al tipo bool de Python."""
-    cancha["techada"] = bool(cancha["techada"])
-    cancha["activa"] = bool(cancha["activa"])
-    return cancha
+def _convertir_dict_booleano(d: dict) -> dict:
+    """convierte valores 0 y 1 a true y false para las claves booleanas"""
+    res = d.copy()
+    for clave, valor in res.items():
+        if clave in CAMPOS_BOOLEANOS and valor is not None:
+            res[clave] = bool(valor)
+    return res
 
 
-def convertir_booleanos_canchas(canchas: list[dict]) -> list[dict]:
-    """Convierte los campos booleanos de una lista de canchas."""
-    return [convertir_booleanos_cancha(cancha) for cancha in canchas]
+def convertir_booleanos(datos):
+    """procesa un solo diccionario o una lista de diccionarios unificando booleanos"""
+    if datos is None:
+        return None
 
+    if isinstance(datos, list):
+        return [_convertir_dict_booleano(item) for item in datos]
+
+    if isinstance(datos, dict):
+        return _convertir_dict_booleano(datos)
+
+    return datos
 
 def validar_string_no_vacio(valor, nombre: str) -> str:
     if valor is None or not str(valor).strip():
@@ -84,13 +93,26 @@ def validar_no_negativo(valor, nombre: str) -> int:
         ))
     return valor
 
-
 def validar_limit(valor, nombre: str) -> int:
-    if valor is None or valor < 1 or valor > 100:
+    if valor < 1 or valor > 100:
         raise ValueError(construir_error_api(
-            code ='invalid_numero',
-            message ='valor incompatible',
+            code='invalid_numero',
+            message='valor incompatible',
             level='error',
-            description ='El parametro _limit debe ser un numero entre 1 y 100'
+            description='El parametro _limit debe ser un numero entre 1 y 100'
         ))
+
     return valor
+
+def validar_email(email: str) -> str:
+    email_limpio = validar_string_no_vacio(email, 'email')
+    patron = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    if not re.match(patron, email_limpio):
+        raise ValueError(construir_error_api(
+            code='invalid.email',
+            message='Formato de email inválido',
+            level='error',
+            description="El campo 'email' debe ser una dirección de correo válida"
+        ))
+        
+    return email_limpio

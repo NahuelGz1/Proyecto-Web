@@ -36,15 +36,31 @@ CREATE TABLE IF NOT EXISTS reservas (
     FOREIGN KEY (id_cancha) REFERENCES canchas(id)
 );
 
-INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa) VALUES
-('Cancha 1', 1, 1000, FALSE, TRUE),
-('Cancha 2', 1, 1000, FALSE, TRUE),
-('Cancha 3', 2, 1500, TRUE, TRUE),
-('Cancha 4', 2, 1500, TRUE, TRUE),
-('Cancha 5', 3, 1200, FALSE, TRUE);
+-- Deportes
+INSERT INTO deportes (id, nombre) VALUES
+    (1, 'Fútbol'),
+    (2, 'Tenis'),
+    (3, 'Pádel')
+    ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
 
+-- Canchas
+INSERT INTO canchas (id, nombre, id_deporte, precio_hora, techada, activa) VALUES
+    (1, 'Cancha 1', 1, 15000, TRUE, TRUE),   -- Con reservas (para probar 409 al borrar)
+    (2, 'Cancha 2',    1, 20000, FALSE, TRUE),  -- Con reservas (para probar 409 al borrar)
+    (3, 'Cancha 3',     2, 10000, FALSE, TRUE),  -- Sin reservas (para probar 204 borrado exitoso)
+    (4, 'Cancha 4',   3, 12000, TRUE, TRUE),   -- Sin reservas (para probar 204 borrado exitoso)
+    (5, 'Cancha 5',    1, 8000,  FALSE, FALSE)  -- Inactiva
+    ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
 
-INSERT INTO deportes (id, nombre) VALUES 
-(1, 'Fútbol'),
-(2, 'Tenis'),
-(3, 'Pádel');
+-- Socios
+INSERT INTO socios (id, nombre, email, activo) VALUES
+    (1, 'Juan Pérez', 'juan.perez@email.com', TRUE),
+    (2, 'María Gómez', 'maria.gomez@email.com', TRUE),
+    (3, 'Carlos Rodríguez', 'carlos.rodriguez@email.com', TRUE)
+    ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
+
+-- Reservas (asociadas a las canchas 1 y 2)
+INSERT INTO reservas (id, id_socio, id_cancha, fecha_hora_inicio, fecha_hora_fin, estado, precio_hora, precio_total) VALUES
+    (1, 1, 1, '2026-10-01 18:00:00.000000', '2026-10-01 19:00:00.000000', 'confirmada', 15000, 15000),
+    (2, 2, 2, '2026-10-02 20:00:00.000000', '2026-10-02 21:00:00.000000', 'confirmada', 20000, 20000)
+    ON DUPLICATE KEY UPDATE estado=VALUES(estado);

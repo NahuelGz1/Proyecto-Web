@@ -7,3 +7,6 @@ __pycache__/
 *.sqlite3
 docker-compose.yml
 .env
+.venv/
+.postman/
+postman/
