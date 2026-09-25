@@ -1,60 +1,50 @@
-from src.repositories.db import conexion, obtener_cursor
-
+from src.repositories.db import ejecutar_consulta
+from src.utils import convertir_booleanos
 
 def listar_socios(nombre: str, activo: bool, limit: int, offset: int):
+    condiciones = []
+    parametros = {}
 
-    connection = conexion()
-    cursor = connection.cursor(dictionary=True)
+    if nombre:
+        condiciones.append("nombre LIKE :nombre")
+        parametros["nombre"] = f"%{nombre}%"
 
-    try:
-        condiciones = []
-        parametros = []
+    if activo is not None:
+        condiciones.append("activo = :activo")
+        parametros["activo"] = activo
 
-        if nombre:
-            condiciones.append("nombre LIKE %s")
-            parametros.append(f"%{nombre}%")
+    where = "WHERE " + " AND ".join(condiciones) if condiciones else ""
 
-        if activo is not None:
-            condiciones.append("activo = %s")
-            parametros.append(activo)
+    #traer registros paginados
+    sql_datos = f"""
+        SELECT id, nombre, email, activo
+        FROM socios
+        {where}
+        ORDER BY id ASC
+        LIMIT :limit OFFSET :offset;
+    """
+    params_datos = {**parametros, "limit": limit, "offset": offset}
+    socios = ejecutar_consulta(sql_datos, params_datos) or []
 
-        where = ""
+    # formateo de booleanos
+    socios = convertir_booleanos(socios, ["activo"])
 
-        if condiciones:
-            where = "WHERE " + " AND ".join(condiciones)
+    # total para paginar
+    sql_total = f"""
+        SELECT COUNT(*) AS total
+        FROM socios
+        {where};
+    """
+    res_total = ejecutar_consulta(sql_total, parametros)
+    total = res_total[0]["total"] if res_total else 0
 
-        cursor.execute(
-            f"""
-            SELECT id, nombre, email, activo
-            FROM socios
-            {where}
-            ORDER BY id ASC
-            LIMIT %s OFFSET %s;
-            """,
-            parametros + [limit, offset]
-        )
+    return socios, total
 
-        socios = cursor.fetchall()
 
-        for socio in socios:
-            socio["activo"] = bool(socio["activo"])
-            
-        cursor.execute(
-            f"""
-            SELECT COUNT(*) AS total
-            FROM socios
-            {where};
-            """,
-            parametros
-        )
 
-        total = cursor.fetchone()["total"]
+    # el resto falta cambiar ----------------------------------
 
-        return socios, total
 
-    finally:
-        cursor.close()
-        connection.close()
 
 def insertar_socio(nombre: str, email: str, activo: bool) -> int:
     connection = conexion()

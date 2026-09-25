@@ -1,6 +1,4 @@
-
-
-
+import re
 
 def construir_error_api(code: str, message: str, description: str, level: str = 'error') -> dict:
     """Construye un payload de error compatible con el resto de la API."""
@@ -14,17 +12,22 @@ def construir_error_api(code: str, message: str, description: str, level: str = 
     }
 
 
+def convertir_booleanos(datos: dict | list[dict] | None, campos: list[str]) -> dict | list[dict] | None:
+
+    if datos is None:
+        return None
+
+    if isinstance(datos, list):
+        return [convertir_booleanos(item, campos) for item in datos]
+
+    for campo in campos:
+        if campo in datos and datos[campo] is not None:
+            datos[campo] = bool(datos[campo])
+
+    return datos
+
 def convertir_booleanos_cancha(cancha: dict) -> dict:
-    """Convierte los campos booleanos de una cancha al tipo bool de Python."""
-    cancha["techada"] = bool(cancha["techada"])
-    cancha["activa"] = bool(cancha["activa"])
-    return cancha
-
-
-def convertir_booleanos_canchas(canchas: list[dict]) -> list[dict]:
-    """Convierte los campos booleanos de una lista de canchas."""
-    return [convertir_booleanos_cancha(cancha) for cancha in canchas]
-
+    return convertir_booleanos(cancha, ["techada", "activa"])
 
 def validar_string_no_vacio(valor, nombre: str) -> str:
     if valor is None or not str(valor).strip():
@@ -84,9 +87,6 @@ def validar_no_negativo(valor, nombre: str) -> int:
         ))
     return valor
 
-
-    return valor
-
 def validar_limit(valor, nombre: str) -> int:
     if valor < 1 or valor > 100:
         raise ValueError(construir_error_api(
@@ -98,13 +98,10 @@ def validar_limit(valor, nombre: str) -> int:
 
     return valor
 
-import re
-
 def validar_email(email: str) -> str:
     email_limpio = validar_string_no_vacio(email, 'email')
     patron = r'^[\w\.-]+@[\w\.-]+\.\w+$'
     if not re.match(patron, email_limpio):
-        from src.utils import construir_error_api
         raise ValueError(construir_error_api(
             code='invalid.email',
             message='Formato de email inválido',
