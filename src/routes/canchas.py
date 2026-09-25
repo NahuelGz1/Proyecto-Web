@@ -1,5 +1,12 @@
 from flask import Blueprint, jsonify, request
-from src.services.canchas import obtener_listado_canchas, obtener_cancha, registrar_cancha, obtener_canchas_disponibles, actualizar_cancha
+from src.services.canchas import (
+    obtener_listado_canchas,
+    obtener_cancha,
+    registrar_cancha,
+    obtener_canchas_disponibles,
+    actualizar_cancha,
+    borrar_cancha,
+)
 
 canchas_bp = Blueprint('canchas', __name__)
 
@@ -102,16 +109,27 @@ def patch_cancha(cancha_id: int):
 
 @canchas_bp.route("/canchas/<int:cancha_id>", methods=["DELETE"])
 def delete_cancha(cancha_id: int):
-    pass
+    try:
+        borrar_cancha(cancha_id)
+    except ValueError as error:
+        status = error.args[1] if len(error.args) > 1 else 400
+        return jsonify(error.args[0]), status
+    except Exception as error:
+        print(f"Error inesperado: {error}")
+        return jsonify(
+            {
+                "errors": [
+                    {
+                        "code": "INTERNAL_SERVER_ERROR",
+                        "message": "Ocurrió un error inesperado en el servidor",
+                        "level": "error",
+                        "description": str(error),
+                    }
+                ]
+            }
+        ), 500
 
-
-
-
-
-
-
-
-
+    return "", 204
 
 
 @canchas_bp.route("/canchas/disponibles", methods=["GET"])
