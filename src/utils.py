@@ -43,7 +43,7 @@ def generar_links_paginacion(total: int, limit: int, offset: int) -> dict:
 from src.constants import ERROR_CODE_INVALID_PARAM
 
 
-def construir_error_api(code: str, message: str, description: str, level: str = 'error', errores_multiples: list = None) -> dict:
+def construir_error_api(code: str =None, message: str= None, description: str =None, level: str = 'error', errores_multiples: list = None) -> dict:  #los iguales = None permiten que los parametros sean opcionales, si no se pasan, se asigna None por defecto
     if errores_multiples is not None:
         return {"errors": errores_multiples}
     return {
