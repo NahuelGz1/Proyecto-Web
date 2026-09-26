@@ -31,11 +31,15 @@ from src.validators.canchas import validar_filtros_canchas
 from src.validators.reservas import validar_filtros_reservas
 
 
-def obtener_listado_reservas(args):
+def obtener_listado_reservas(args:dict):
 
     filtros = validar_filtros_reservas(args)
     limit, offset = validar_paginacion(args)
+    total=contar_reservas(filtros)
 
-    total = contar_reservas(filtros)
-    reservas = listar_reservas(filtros, limit, offset)
+    if total == 0:
+        return None #señal para que la ruta devuelva un 204 sin contenido
+
+    reservas = listar_reservas(filtros, limit, offset) #consulta a la base de datos
+
     return reservas, total, limit, offset

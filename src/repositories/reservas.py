@@ -1,11 +1,15 @@
 from src.repositories.db import ejecutar_consulta, ejecutar_mutacion
 from src.utils import convertir_booleanos
 
+
+
+#los filtros que recibe son los que pidio el usuario.
+
 def _armar_where(filtros: dict):
-    condiciones = []
+    condiciones = [] #aca se van a ir guardando las condiciones que se van a usar en el where de la consulta
     parametros = {}
 
-    if filtros.get("id_cancha") is not None:
+    if filtros.get("id_cancha") is not None:               #explicitamos el none aca por que estamos hablando de numero
         condiciones.append("id_cancha = :id_cancha")
         parametros["id_cancha"] = filtros["id_cancha"]
 
@@ -13,18 +17,26 @@ def _armar_where(filtros: dict):
         condiciones.append("id_socio = :id_socio")
         parametros["id_socio"] = filtros["id_socio"]
 
-    if filtros.get("estado"):
+    if filtros.get("estado"):                           #si esta vacio el estado("") entonces sera un false
         condiciones.append("estado = :estado")
         parametros["estado"] = filtros["estado"]
 
-    if filtros.get("fecha"):
-        condiciones.append("DATE(fecha_hora_inicio) = :fecha")
-        parametros["fecha"] = filtros["fecha"]
+    if filtros.get("fecha_desde"):
+        condiciones.append("DATE(fecha_hora_inicio) >= :fecha_desde")
+        parametros["fecha_desde"] = filtros["fecha_desde"]
+
+    if filtros.get("fecha_hasta"):
+        condiciones.append("DATE(fecha_hora_inicio) <= :fecha_hasta")
+        parametros["fecha_hasta"] = filtros["fecha_hasta"]
 
     where_sql = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
     return where_sql, parametros
 
 
+
+
+#esta funcion sirve para preguntar a la base de datos cuantas reservas hay que cumplen con los filtros que pidio el usuario
+#devolvera un numero entero con la cantidad de reservas que cumplen con los filtros
 def contar_reservas(filtros: dict) -> int:
     where_sql, params = _armar_where(filtros)
     sql = f"SELECT COUNT(*) AS total FROM reservas {where_sql};"
