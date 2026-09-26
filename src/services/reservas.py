@@ -26,7 +26,7 @@ from src.repositories.reservas import (
     obtener_reserva_por_id,
 )
 from src.repositories.socios import buscar_socio_por_id
-from src.utils import construir_error_api
+from src.utils import construir_error_api, validar_paginacion
 from src.validators.canchas import validar_filtros_canchas
 from src.validators.reservas import validar_filtros_reservas
 
@@ -34,7 +34,7 @@ from src.validators.reservas import validar_filtros_reservas
 def obtener_listado_reservas(args):
 
     filtros = validar_filtros_reservas(args)
-    limit, offset = validar_paginacion_reservas(args)
+    limit, offset = validar_paginacion(args)
 
     total = contar_reservas(filtros)
     reservas = listar_reservas(filtros, limit, offset)

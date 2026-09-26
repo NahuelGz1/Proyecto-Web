@@ -1,5 +1,5 @@
 from src.constants import ERROR_CODE_CANCHA_NOT_FOUND
-from src.utils import construir_error_api
+from src.utils import construir_error_api, validar_paginacion
 
 from src.repositories.canchas import (
     contar_canchas,
@@ -16,7 +16,6 @@ from src.repositories.canchas import (
 
 from src.validators.canchas import (
     validar_filtros_canchas,
-    validar_paginacion,
     validar_body_nueva_cancha,
     validar_body_modificar_cancha,
     validar_disponibilidad,
