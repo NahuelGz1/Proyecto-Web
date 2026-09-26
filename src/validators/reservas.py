@@ -10,8 +10,7 @@ def validar_filtros_reservas(args: dict) -> dict:
     Si no hay filtros devuelve un diccionario vacio
     """
     filtros = {}
-    errores = [
-    ]
+    errores = []
 
 
     id_cancha = args.get("id_cancha")
@@ -106,9 +105,9 @@ def validar_filtros_reservas(args: dict) -> dict:
                 }
             )
 
-    if errores:
+    if errores: #si el diccionario errores tiene un elemento, va a entrar al if
         payload_error = construir_error_api(errores_multiples=errores)
-        raise ValueError(payload_error, 400)
+        raise ValueError(payload_error, 400)                                 # se detiene la funcon y se arroja el json con los errores/error y el codigo 400
 
 
     return filtros
