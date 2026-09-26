@@ -51,9 +51,9 @@ def validar_filtros_canchas(args):
     }
 
 
-<<<<<<< HEAD
 
-=======
+
+
 # valida que los parametros de paginacion _limit y _offset sean enteros validos
 # por example: _limit debe estar entre 1 y 100, y _offset no puede ser negativo
 def validar_paginacion(args):
@@ -79,7 +79,7 @@ def validar_paginacion(args):
         )
 
     return limit, offset
->>>>>>> reservas-marcos
+
 
 
 # valida el cuerpo de la solicitud al crear una cancha (POST) acumulando todos los errores

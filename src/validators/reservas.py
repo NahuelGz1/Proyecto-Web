@@ -1,7 +1,8 @@
 from src.constants import ERROR_CODE_INVALID_PARAM
 from src.utils import construir_error_api
 
-
+#esta funcion valida los filtros que se pueden pasar por query params a la ruta de reservas, es mas que nada para
+#lo que es el postman cuando colocas la ruta y le pasas los query params, para que no rompa la aplicacion y devuelva un error 400 con el mensaje correspondiente
 def validar_filtros_reservas(args: dict) -> dict:
     """
     PRE CONDICIONES:
