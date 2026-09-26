@@ -1,5 +1,40 @@
 import re
 from src.constants import ERROR_CODE_INTERNAL
+from flask import request
+
+# ESTANDARIZACION DE PAGINACION
+
+# genera los hipervínculos de paginación (HATEOAS) de forma genérica para cualquier endpoint (canchas, reservas, socios, etc.)
+# por ejemplo: genera los dicts _first, _prev, _next y _last manteniendo query params activos
+def generar_links_paginacion(total: int, limit: int, offset: int) -> dict:
+    url_base = request.host_url.rstrip('/') + request.path
+
+    # preserva cualquier filtro que venga en los query params exceptuando los de paginación
+    filtros_url = [
+        f"{clave}={valor}"
+        for clave, valor in request.args.items()
+        if clave not in ("_limit", "_offset")
+    ]
+
+    query_string = "&".join(filtros_url)
+    prefijo = f"{url_base}?{query_string}&" if query_string else f"{url_base}?"
+    ultimo_offset = max((total - 1) // limit, 0) * limit if total > 0 else 0
+
+    return {
+        "_first": {"href": f"{prefijo}_offset=0&_limit={limit}"},
+        "_prev": (
+            {"href": f"{prefijo}_offset={max(offset - limit, 0)}&_limit={limit}"}
+            if offset > 0
+            else None
+        ),
+        "_next": (
+            {"href": f"{prefijo}_offset={offset + limit}&_limit={limit}"}
+            if offset + limit < total
+            else None
+        ),
+        "_last": {"href": f"{prefijo}_offset={ultimo_offset}&_limit={limit}"},
+    }
+
 
 # CONSTRUCTORES Y MANEJADORES DE ERRORES API
 
