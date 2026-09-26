@@ -1,108 +1,98 @@
 from src.repositories.db import ejecutar_consulta, ejecutar_mutacion
+from src.utils import convertir_booleanos
 
 
-def listar_socios(nombre: str, activo: bool, limit: int, offset: int):
+# funcion auxiliar para construir la clausula WHERE dinamicamente segun los filtros
+# por ejemplo: si le pasas {"nombre": "Juan", "activo": True}, te genera 'WHERE nombre LIKE :nombre AND activo = :activo'
+def _armar_where(filtros: dict):
     condiciones = []
     parametros = {}
 
-    if nombre:
+    if filtros.get("nombre"):
         condiciones.append("nombre LIKE :nombre")
-        parametros["nombre"] = f"%{nombre}%"
+        parametros["nombre"] = f"%{filtros['nombre']}%"
 
-    if activo is not None:
+    if filtros.get("activo") is not None:
         condiciones.append("activo = :activo")
-        parametros["activo"] = activo
+        parametros["activo"] = filtros["activo"]
 
-    where = ""
-    if condiciones:
-        where = "WHERE " + " AND ".join(condiciones)
+    where_sql = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
+    return where_sql, parametros
 
-    sql_socios = f"""
+
+# cuenta la cantidad total de socios que coinciden con los filtros para calcular la paginacion
+# por ejemplo: devuelve 42 si hay 42 socios activos en total
+def contar_socios(filtros: dict) -> int:
+    where_sql, params = _armar_where(filtros)
+    sql = f"SELECT COUNT(*) AS total FROM socios {where_sql};"
+    filas = ejecutar_consulta(sql, params)
+    return filas[0]["total"] if filas else 0
+
+
+# trae la lista de socios paginada y filtrada convirtiendo los 0 y 1 a booleanos
+# por ejemplo: listar_socios({"activo": True}, limit=10, offset=0) trae los primeros 10 activos
+def listar_socios(filtros: dict, limit: int, offset: int) -> list[dict]:
+    where_sql, params = _armar_where(filtros)
+    params["limit"] = limit
+    params["offset"] = offset
+
+    sql = f"""
         SELECT id, nombre, email, activo
         FROM socios
-        {where}
+        {where_sql}
         ORDER BY id ASC
         LIMIT :limit OFFSET :offset;
     """
-    params_socios = dict(parametros)
-    params_socios["limit"] = limit
-    params_socios["offset"] = offset
-
-    socios = ejecutar_consulta(sql_socios, params_socios)
-
-    for socio in socios:
-        socio["activo"] = bool(socio["activo"])
-
-    sql_total = f"""
-        SELECT COUNT(*) AS total
-        FROM socios
-        {where};
-    """
-    resultado_total = ejecutar_consulta(sql_total, parametros)
-    total = resultado_total[0]["total"] if resultado_total else 0
-
-    return socios, total
+    return convertir_booleanos(ejecutar_consulta(sql, params))
 
 
+# busca los datos de un unico socio por su id
+# por ejemplo: buscar_socio_por_id(5) devuelve {"id": 5, "nombre": "Ana", ...} o None si no existe
+def buscar_socio_por_id(id_socio: int) -> dict | None:
+    sql = """
+          SELECT id, nombre, email, activo
+          FROM socios
+          WHERE id = :id_socio; \
+          """
+    filas = ejecutar_consulta(sql, {"id_socio": id_socio})
+    if filas:
+        return convertir_booleanos(filas)[0]
+    return None
+
+
+# inserta un nuevo socio en la tabla socios y retorna el id asignado por la base de datos
+# por ejemplo: insertar_socio("Carlos", "carlos@gmail.com", True) devuelve 15
 def insertar_socio(nombre: str, email: str, activo: bool) -> int:
-    query = """
-        INSERT INTO socios (nombre, email, activo)
-        VALUES (:nombre, :email, :activo);
+    sql = """
+          INSERT INTO socios (nombre, email, activo)
+          VALUES (:nombre, :email, :activo); \
+          """
+    return ejecutar_mutacion(
+        sql,
+        {
+            "nombre": nombre,
+            "email": email,
+            "activo": activo,
+        },
+    )
+
+
+# actualiza unicamente los campos recibidos en el diccionario 'datos'
+# por ejemplo: si le pasas {"activo": False}, genera 'UPDATE socios SET activo = :activo WHERE id = :id_socio'
+def actualizar_socio_en_base(id_socio: int, datos: dict) -> None:
+    if not datos:
+        return
+
+    set_clauses = [f"{campo} = :{campo}" for campo in datos.keys()]
+    set_sql = ", ".join(set_clauses)
+
+    sql = f"""
+        UPDATE socios
+        SET {set_sql}
+        WHERE id = :id_socio;
     """
-    parametros = {
-        "nombre": nombre,
-        "email": email,
-        "activo": activo
-    }
-    return ejecutar_mutacion(query, parametros)
 
+    parametros = dict(datos)
+    parametros["id_socio"] = id_socio
 
-def buscar_socio_por_id(id):
-    query = """
-        SELECT id, nombre, email, activo
-        FROM socios
-        WHERE id = :id;
-    """
-    socios = ejecutar_consulta(query, {"id": id})
-
-    if not socios:
-        return None
-
-    socio = socios[0]
-    socio["activo"] = bool(socio["activo"])
-
-    return socio
-
-
-def actualizar_socio_en_base(id: int, datos: dict) -> bool:
-    if 'nombre' in datos:
-        ejecutar_mutacion(
-            """
-            UPDATE socios
-            SET nombre = :nombre
-            WHERE id = :id;
-            """,
-            {'nombre': datos['nombre'], 'id': id}
-        )
-
-    if 'email' in datos:
-        ejecutar_mutacion(
-            """
-            UPDATE socios
-            SET email = :email
-            WHERE id = :id;
-            """,
-            {'email': datos['email'], 'id': id}
-        )
-
-    if 'activo' in datos:
-        ejecutar_mutacion(
-            """
-            UPDATE socios
-            SET activo = :activo
-            WHERE id = :id;
-            """,
-            {'activo': datos['activo'], 'id': id}
-        )
-
-    return True
+    ejecutar_mutacion(sql, parametros)
