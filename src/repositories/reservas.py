@@ -2,19 +2,13 @@ from src.repositories.db import ejecutar_consulta, ejecutar_mutacion
 from src.utils import convertir_booleanos
 
 
-<<<<<<< HEAD
-
-#los filtros que recibe son los que pidio el usuario.
-
-=======
 # construye de forma dinamica la clausula WHERE y los parametros SQL segun los filtros especificados
 # por ejemplo: {"id_cancha": 2, "estado": "confirmada"} -> ("WHERE id_cancha = :id_cancha AND estado = :estado", {...})
->>>>>>> reservas-marcos
 def _armar_where(filtros: dict):
-    condiciones = [] #aca se van a ir guardando las condiciones que se van a usar en el where de la consulta
+    condiciones = []
     parametros = {}
 
-    if filtros.get("id_cancha") is not None:               #explicitamos el none aca por que estamos hablando de numero
+    if filtros.get("id_cancha") is not None:
         condiciones.append("id_cancha = :id_cancha")
         parametros["id_cancha"] = filtros["id_cancha"]
 
@@ -22,7 +16,7 @@ def _armar_where(filtros: dict):
         condiciones.append("id_socio = :id_socio")
         parametros["id_socio"] = filtros["id_socio"]
 
-    if filtros.get("estado"):                           #si esta vacio el estado("") entonces sera un false
+    if filtros.get("estado"):
         condiciones.append("estado = :estado")
         parametros["estado"] = filtros["estado"]
 
@@ -38,15 +32,8 @@ def _armar_where(filtros: dict):
     return where_sql, parametros
 
 
-<<<<<<< HEAD
-
-
-#esta funcion sirve para preguntar a la base de datos cuantas reservas hay que cumplen con los filtros que pidio el usuario
-#devolvera un numero entero con la cantidad de reservas que cumplen con los filtros
-=======
 # obtiene la cantidad total de reservas que coinciden con los filtros aplicados
 # por ejemplo: retorna 15 para la cantidad total de reservas confirmadas de un socio
->>>>>>> reservas-marcos
 def contar_reservas(filtros: dict) -> int:
     where_sql, params = _armar_where(filtros)
     sql = f"SELECT COUNT(*) AS total FROM reservas {where_sql};"
@@ -116,14 +103,13 @@ def existe_superposicion(
 # inserta un nuevo registro de reserva en la base de datos y retorna el id generado
 # por ejemplo: crea una reserva 'confirmada' con fecha inicio, fin y montos
 def crear_reserva(
-<<<<<<< HEAD
         id_cancha: int,
         id_socio: int,
         fecha_hora_inicio: str,
         fecha_hora_fin: str,
         precio_hora: float,
         precio_total: float,
-        estado: str = "confirmada"
+        estado: str = "confirmada",
 ) -> int:
     sql = """
           INSERT INTO reservas (
@@ -131,39 +117,10 @@ def crear_reserva(
               precio_hora, precio_total, estado
           )
           VALUES (
-              :id_cancha, :id_socio, :fecha_hora_inicio, :fecha_hora_fin,
-              :precio_hora, :precio_total, :estado
-          ); \
+                     :id_cancha, :id_socio, :fecha_hora_inicio, :fecha_hora_fin,
+                     :precio_hora, :precio_total, :estado
+                 ); \
           """
-    return ejecutar_mutacion(
-        sql,
-        {
-            "id_cancha": id_cancha,
-            "id_socio": id_socio,
-            "fecha_hora_inicio": fecha_hora_inicio,
-            "fecha_hora_fin": fecha_hora_fin,
-            "precio_hora": precio_hora,
-            "precio_total": precio_total,
-            "estado": estado,
-        },
-    )
-=======
-        id_cancha,
-        id_socio,
-        fecha_hora_inicio,
-        fecha_hora_fin,
-        precio_total,
-        estado="confirmada",
-        precio_hora=None,
-):
-    if precio_hora is None:
-        precio_hora = precio_total
-
-    sql = """
-          INSERT INTO reservas (id_cancha, id_socio, fecha_hora_inicio, fecha_hora_fin, precio_hora, precio_total, estado)
-          VALUES (:id_cancha, :id_socio, :fecha_hora_inicio, :fecha_hora_fin, :precio_hora, :precio_total, :estado); \
-          """
-
     parametros = {
         "id_cancha": id_cancha,
         "id_socio": id_socio,
@@ -173,9 +130,7 @@ def crear_reserva(
         "precio_total": precio_total,
         "estado": estado,
     }
-
     return ejecutar_mutacion(sql, parametros)
->>>>>>> reservas-marcos
 
 
 # actualiza dinamicamente uno o mas campos de un registro de reserva existente

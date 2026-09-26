@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 from datetime import datetime, timedelta
 
 from src.constants import (
@@ -44,5 +44,3 @@ def obtener_listado_reservas(args:dict):
     reservas = listar_reservas(filtros, limit, offset) #consulta a la base de datos
 
     return reservas, total, limit, offset
-=======
->>>>>>> reservas-marcos
