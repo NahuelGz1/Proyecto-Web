@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from src.constants import BASE_URL, ERROR_CODE_INTERNAL
 from src.utils import construir_error_api
+from src.utils import procesar_error_api
 
 from src.routes.deportes import deportes_bp
 from src.routes.socios import socios_bp
@@ -43,6 +44,22 @@ def manejar_error_inesperado(error):
         description=str(error)
     )
     return jsonify(payload), 500
+
+
+# manejo de errores centralizado: como las rutas ya no tienen try/except,
+# esto agarra cualquier ValueError o error inesperado y arma el JSON de respuesta
+
+@app.errorhandler(ValueError)
+def manejar_error_validacion(error):
+    payload, status = procesar_error_api(error)
+    return jsonify(payload), status
+
+
+@app.errorhandler(Exception)
+def manejar_error_generico(error):
+    payload, status = procesar_error_api(error)
+    return jsonify(payload), status
+
 
 
 # REGISTRO DE BLUEPRINTS

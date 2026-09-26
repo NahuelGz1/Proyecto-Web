@@ -51,35 +51,9 @@ def validar_filtros_canchas(args):
     }
 
 
-<<<<<<< HEAD
-
-=======
-# valida que los parametros de paginacion _limit y _offset sean enteros validos
-# por example: _limit debe estar entre 1 y 100, y _offset no puede ser negativo
-def validar_paginacion(args):
-    try:
-        limit = int(args.get('_limit', 10))
-        offset = int(args.get('_offset', 0))
-    except (ValueError, TypeError):
-        raise ValueError(
-            construir_error_api(
-                code=ERROR_CODE_INVALID_PARAM,
-                message="Parámetro inválido",
-                description="_limit y _offset deben ser números enteros",
-            )
-        )
-
-    if not (1 <= limit <= 100) or offset < 0:
-        raise ValueError(
-            construir_error_api(
-                code=ERROR_CODE_INVALID_PARAM,
-                message="Parámetro inválido",
-                description="_limit debe estar entre 1 y 100, y _offset no puede ser negativo",
-            )
-        )
-
-    return limit, offset
->>>>>>> reservas-marcos
+# ARREGLO: acá había quedado un conflicto de git sin resolver 
+# (las marcas <<<<<<< / ======= / >>>>>>>), rompía la sintaxis y no dejaba arrancar
+# la app. validar_paginacion ahora vive en utils.py, no hace falta acá.
 
 
 # valida el cuerpo de la solicitud al crear una cancha (POST) acumulando todos los errores
@@ -93,6 +67,16 @@ def validar_body_nueva_cancha(body: dict) -> dict:
                 description='El cuerpo debe ser un JSON válido con Content-Type application/json',
             )
         )
+
+# rechaza cualquier campo que no sea de los 5 permitidos (lo pide el enunciado)
+    campos_permitidos = {"nombre", "id_deporte", "precio_hora", "techada", "activa"}
+    campos_desconocidos = set(body.keys()) - campos_permitidos
+    if campos_desconocidos:
+        raise ValueError(construir_error_api(
+            code=ERROR_CODE_INVALID_BODY,
+            message='Cuerpo de la solicitud inválido',
+            description=f"Campos desconocidos: {', '.join(campos_desconocidos)}"
+        ))
 
     errores = []
 
@@ -170,10 +154,11 @@ def validar_body_modificar_cancha(body: dict) -> dict:
         except ValueError as e:
             errores.extend(e.args[0]["errors"])
 
+    # le faltaba el default, sin eso explotaba con TypeError al mandar techada o activa
     if "techada" in body:
         try:
             campos_actualizados["techada"] = validar_booleano(
-                body.get("techada"), "techada"
+                body.get("techada"), "techada", default=False
             )
         except ValueError as e:
             errores.extend(e.args[0]["errors"])
@@ -181,7 +166,7 @@ def validar_body_modificar_cancha(body: dict) -> dict:
     if "activa" in body:
         try:
             campos_actualizados["activa"] = validar_booleano(
-                body.get("activa"), "activa"
+                body.get("activa"), "activa", default=True
             )
         except ValueError as e:
             errores.extend(e.args[0]["errors"])
@@ -239,15 +224,17 @@ def validar_disponibilidad(args):
             )
         )
 
+    # el swagger pide hora_inicio/hora_fin con segundos y en punto, tipo "18:00:00"
+    # (antes solo pedía "18:00" sin segundos y no cumplía el formato del contrato)
     try:
-        hora_inicio = datetime.strptime(hora_inicio_str, "%H:%M")
-        hora_fin = datetime.strptime(hora_fin_str, "%H:%M")
+        hora_inicio = datetime.strptime(hora_inicio_str, "%H:%M:%S")
+        hora_fin = datetime.strptime(hora_fin_str, "%H:%M:%S")
     except ValueError:
         raise ValueError(
             construir_error_api(
                 code=ERROR_CODE_INVALID_PARAM,
                 message="Parámetro inválido",
-                description="hora_inicio y hora_fin deben tener el formato HH:MM",
+                description="hora_inicio y hora_fin deben tener el formato HH:00:00",
             )
         )
 
