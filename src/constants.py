@@ -43,3 +43,4 @@ ERROR_CODE_SOCIO_NOT_FOUND     = 'socio.not.found'
 ERROR_CODE_CANCHA_NOT_FOUND    = 'cancha.not.found'
 ERROR_CODE_HORARIO_OCUPADO     = 'horario.ocupado'
 ERROR_CODE_TRANSICION_INVALIDA = 'transicion.estado.invalida'
+ERROR_CODE_INTERNAL = "INTERNAL_SERVER_ERROR"

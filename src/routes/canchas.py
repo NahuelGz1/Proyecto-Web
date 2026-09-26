@@ -1,166 +1,69 @@
 from flask import Blueprint, jsonify, request
 from src.services.canchas import (
-    obtener_listado_canchas,
-    obtener_cancha,
-    registrar_cancha,
-    obtener_canchas_disponibles,
     actualizar_cancha,
     borrar_cancha,
+    obtener_cancha,
+    obtener_canchas_disponibles,
+    obtener_listado_canchas,
+    registrar_cancha,
 )
+from src.utils import generar_links_paginacion
 
 canchas_bp = Blueprint('canchas', __name__)
 
 
+# obtiene el listado general de canchas aplicando filtros y paginacion
+# por ejemplo: GET /canchas?techada=true responde 200 con la lista paginada o 204 si esta vacia
 @canchas_bp.route('/canchas', methods=['GET'])
 def get_canchas():
-    try:
-        canchas, total, limit, offset = obtener_listado_canchas(request.args)
-    except ValueError as error:
-        status = error.args[1] if len(error.args) > 1 else 400
-        return jsonify(error.args[0]), status
-    except Exception as error:
-        print(f"Error inesperado: {error}")
-        return jsonify({"errors": [{
-            "code": "INTERNAL_SERVER_ERROR",
-            "message": "Ocurrió un error inesperado en el servidor",
-            "level": "error",
-            "description": str(error)
-        }]}), 500
-
+    canchas, total, limit, offset = obtener_listado_canchas(request.args)
     if not canchas:
         return '', 204
 
-    url_base = request.host_url.rstrip('/') + request.path
-    filtros_url = [f"{clave}={valor}" for clave, valor in request.args.items() if clave not in ("_limit", "_offset")]
-    query_string = "&".join(filtros_url)
-    prefijo = f"{url_base}?{query_string}&" if query_string else f"{url_base}?"
-    ultimo_offset = max((total - 1) // limit, 0) * limit if total > 0 else 0
-
-    links = {
-        "_first": {"href": f"{prefijo}_offset=0&_limit={limit}"},
-        "_prev": {"href": f"{prefijo}_offset={max(offset - limit, 0)}&_limit={limit}"} if offset > 0 else None,
-        "_next": {"href": f"{prefijo}_offset={offset + limit}&_limit={limit}"} if offset + limit < total else None,
-        "_last": {"href": f"{prefijo}_offset={ultimo_offset}&_limit={limit}"},
-    }
-
+    links = generar_links_paginacion(total, limit, offset)
     return jsonify({"canchas": canchas, "_links": links}), 200
 
 
-@canchas_bp.route('/canchas/<int:cancha_id>', methods=['GET'])
-def get_cancha_por_id(cancha_id):
-    try:
-        cancha = obtener_cancha(cancha_id)
-    except ValueError as error:
-        status = error.args[1] if len(error.args) > 1 else 400
-        return jsonify(error.args[0]), status
-    except Exception as error:
-        print(f"Error inesperado: {error}")
-        return jsonify({"errors": [{
-            "code": "INTERNAL_SERVER_ERROR",
-            "message": "Ocurrió un error inesperado en el servidor",
-            "level": "error",
-            "description": str(error)
-        }]}), 500
-
-    return jsonify(cancha), 200
-
-
-@canchas_bp.route("/canchas", methods=["POST"])
-def post_cancha():
-    try:
-        data = request.get_json(silent=True)
-        cancha = registrar_cancha(data)
-    except ValueError as error:
-        status = error.args[1] if len(error.args) > 1 else 400
-        return jsonify(error.args[0]), status
-    except Exception as error:
-        print(f"Error inesperado: {error}")
-        return jsonify({"errors": [{
-            "code": "INTERNAL_SERVER_ERROR",
-            "message": "Ocurrió un error inesperado en el servidor",
-            "level": "error",
-            "description": str(error)
-        }]}), 500
-
-    return jsonify(cancha), 201
-
-# 23/9 ----------------------------------------------------------------------------------- (PATCH)
-#le llega el patch y llama a actualizar_cancha y envia codigos de error o valido si esta todo bien
-@canchas_bp.route("/canchas/<int:cancha_id>", methods=["PATCH"])
-def patch_cancha(cancha_id: int):
-    try:
-        data = request.get_json(silent=True)
-        actualizar_cancha(cancha_id, data)
-        cancha = obtener_cancha(cancha_id)
-    except ValueError as error:
-        status = error.args[1] if len(error.args) > 1 else 400
-        return jsonify(error.args[0]), status
-    except Exception as error:
-        print(f"Error inesperado: {error}")
-        return jsonify({"errors": [{
-            "code": "INTERNAL_SERVER_ERROR",
-            "message": "Ocurrió un error inesperado en el servidor",
-            "level": "error",
-            "description": str(error)
-        }]}), 500
-
-    return jsonify(cancha), 200
-
-
-@canchas_bp.route("/canchas/<int:cancha_id>", methods=["DELETE"])
-def delete_cancha(cancha_id: int):
-    try:
-        borrar_cancha(cancha_id)
-    except ValueError as error:
-        status = error.args[1] if len(error.args) > 1 else 400
-        return jsonify(error.args[0]), status
-    except Exception as error:
-        print(f"Error inesperado: {error}")
-        return jsonify(
-            {
-                "errors": [
-                    {
-                        "code": "INTERNAL_SERVER_ERROR",
-                        "message": "Ocurrió un error inesperado en el servidor",
-                        "level": "error",
-                        "description": str(error),
-                    }
-                ]
-            }
-        ), 500
-
-    return "", 204
-
-
+# consulta y devuelve unicamente las canchas disponibles para un rango de fecha/hora
+# por ejemplo: GET /canchas/disponibles?fecha=2026-10-15&hora_inicio=18:00&hora_fin=19:00
 @canchas_bp.route("/canchas/disponibles", methods=["GET"])
 def get_canchas_disponibles():
-    try:
-        canchas, total, limit, offset = obtener_canchas_disponibles(request.args)
-    except ValueError as error:
-        status = error.args[1] if len(error.args) > 1 else 400
-        return jsonify(error.args[0]), status
-    except Exception as error:
-        print(f"Error inesperado: {error}")
-        return jsonify({"errors": [{
-            "code": "INTERNAL_SERVER_ERROR",
-            "message": "Ocurrió un error inesperado en el servidor",
-            "level": "error",
-            "description": str(error)
-        }]}), 500
-
-
-    # A diferencia de /canchas, aca siempre es 200, incluso con array vacio
-    url_base = request.host_url.rstrip('/') + request.path
-    filtros_url = [f"{clave}={valor}" for clave, valor in request.args.items() if clave not in ("_limit", "_offset")]
-    query_string = "&".join(filtros_url)
-    prefijo = f"{url_base}?{query_string}&" if query_string else f"{url_base}?"
-    ultimo_offset = max((total - 1) // limit, 0) * limit if total > 0 else 0
-
-    links = {
-        "_first": {"href": f"{prefijo}_offset=0&_limit={limit}"},
-        "_prev": {"href": f"{prefijo}_offset={max(offset - limit, 0)}&_limit={limit}"} if offset > 0 else None,
-        "_next": {"href": f"{prefijo}_offset={offset + limit}&_limit={limit}"} if offset + limit < total else None,
-        "_last": {"href": f"{prefijo}_offset={ultimo_offset}&_limit={limit}"},
-    }
-
+    canchas, total, limit, offset = obtener_canchas_disponibles(request.args)
+    links = generar_links_paginacion(total, limit, offset)
     return jsonify({"canchas": canchas, "_links": links}), 200
+
+
+# busca y retorna el detalle de una cancha especifica mediante su id
+# por ejemplo: GET /canchas/5 devuelve los datos completos de la cancha 5
+@canchas_bp.route('/canchas/<int:cancha_id>', methods=['GET'])
+def get_cancha_por_id(cancha_id):
+    cancha = obtener_cancha(cancha_id)
+    return jsonify(cancha), 200
+
+
+# registra una nueva cancha en la base de datos
+# por ejemplo: POST /canchas crea la cancha y retorna status 201 junto al header Location
+@canchas_bp.route("/canchas", methods=["POST"])
+def post_cancha():
+    data = request.get_json(silent=True)
+    cancha = registrar_cancha(data)
+    headers = {"Location": f"/canchas/{cancha['id']}"}
+    return jsonify(cancha), 201, headers
+
+
+# modifica parcialmente los atributos de una cancha existente (PATCH)
+# por ejemplo: PATCH /canchas/2 con {"precio_hora": 2500} actualiza únicamente el precio
+@canchas_bp.route("/canchas/<int:cancha_id>", methods=["PATCH"])
+def patch_cancha(cancha_id: int):
+    data = request.get_json(silent=True)
+    actualizar_cancha(cancha_id, data)
+    cancha = obtener_cancha(cancha_id)
+    return jsonify(cancha), 200
+
+
+# elimina permanentemente una cancha si no posee reservas asociadas
+# por ejemplo: DELETE /canchas/3 retorna status 204 si la eliminacion fue exitosa
+@canchas_bp.route("/canchas/<int:cancha_id>", methods=["DELETE"])
+def delete_cancha(cancha_id: int):
+    borrar_cancha(cancha_id)
+    return "", 204
