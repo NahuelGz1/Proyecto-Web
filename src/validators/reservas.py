@@ -107,7 +107,7 @@ def validar_filtros_reservas(args: dict) -> dict:
 
     if errores: #si el diccionario errores tiene un elemento, va a entrar al if
         payload_error = construir_error_api(errores_multiples=errores)
-        raise ValueError(payload_error, 400)                                 # se detiene la funcon y se arroja el json con los errores/error y el codigo 400
+        raise ValueError(payload_error, 400)                                 # se detiene la funcion y se arroja el json con los errores/error y el codigo 400
 
 
     return filtros
