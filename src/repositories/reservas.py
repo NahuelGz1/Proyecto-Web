@@ -38,7 +38,8 @@ def listar_reservas(filtros: dict, limit: int, offset: int) -> list[dict]:
     params["offset"] = offset
 
     sql = f"""
-        SELECT id, id_cancha, id_socio, fecha_hora_inicio, fecha_hora_fin, precio_total, estado
+        SELECT id, id_cancha, id_socio, fecha_hora_inicio, fecha_hora_fin,
+               precio_hora, precio_total, estado
         FROM reservas
         {where_sql}
         ORDER BY fecha_hora_inicio DESC
@@ -49,7 +50,8 @@ def listar_reservas(filtros: dict, limit: int, offset: int) -> list[dict]:
 
 def obtener_reserva_por_id(reserva_id: int) -> dict | None:
     sql = """
-          SELECT id, id_cancha, id_socio, fecha_hora_inicio, fecha_hora_fin, precio_total, estado
+          SELECT id, id_cancha, id_socio, fecha_hora_inicio, fecha_hora_fin,
+                 precio_hora, precio_total, estado
           FROM reservas
           WHERE id = :reserva_id; \
           """
@@ -85,12 +87,19 @@ def crear_reserva(
         id_socio: int,
         fecha_hora_inicio: str,
         fecha_hora_fin: str,
+        precio_hora: float,
         precio_total: float,
         estado: str = "confirmada"
 ) -> int:
     sql = """
-          INSERT INTO reservas (id_cancha, id_socio, fecha_hora_inicio, fecha_hora_fin, precio_total, estado)
-          VALUES (:id_cancha, :id_socio, :fecha_hora_inicio, :fecha_hora_fin, :precio_total, :estado); \
+          INSERT INTO reservas (
+              id_cancha, id_socio, fecha_hora_inicio, fecha_hora_fin,
+              precio_hora, precio_total, estado
+          )
+          VALUES (
+              :id_cancha, :id_socio, :fecha_hora_inicio, :fecha_hora_fin,
+              :precio_hora, :precio_total, :estado
+          ); \
           """
     return ejecutar_mutacion(
         sql,
@@ -99,6 +108,7 @@ def crear_reserva(
             "id_socio": id_socio,
             "fecha_hora_inicio": fecha_hora_inicio,
             "fecha_hora_fin": fecha_hora_fin,
+            "precio_hora": precio_hora,
             "precio_total": precio_total,
             "estado": estado,
         },

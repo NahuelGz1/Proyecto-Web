@@ -45,24 +45,23 @@ def validar_filtros_canchas(args):
     }
 
 
-def validar_paginacion(args):
+def validar_paginacion(args: dict):
+
     try:
-        limit = int(args.get('_limit', 10))
-        offset = int(args.get('_offset', 0))
+        limit = int(args.get("limit", 10))  #si limit en el diccionario args no existe, se asigna 10 por defecto
+        offset = int(args.get("offset", 0)) #si offset en el diccionario args no existe, se asigna 0 por defecto
     except ValueError:
         raise ValueError(construir_error_api(
             code=ERROR_CODE_INVALID_PARAM,
             message="Parámetro inválido",
-            description="_limit y _offset deben ser números enteros"
+            description="limit y offset deben ser números enteros"
         ))
-
-    if not (1 <= limit <= 100) or offset < 0:
+    if not (1 <= limit <= 10) or offset < 0:
         raise ValueError(construir_error_api(
             code=ERROR_CODE_INVALID_PARAM,
             message="Parámetro inválido",
-            description="_limit debe estar entre 1 y 100, y _offset no puede ser negativo"
+            description="limit debe estar entre 1 y 10, y offset no puede ser negativo"
         ))
-
     return limit, offset
 
 
