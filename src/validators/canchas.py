@@ -54,31 +54,7 @@ def validar_filtros_canchas(args):
 
 
 
-# valida que los parametros de paginacion _limit y _offset sean enteros validos
-# por example: _limit debe estar entre 1 y 100, y _offset no puede ser negativo
-def validar_paginacion(args):
-    try:
-        limit = int(args.get('_limit', 10))
-        offset = int(args.get('_offset', 0))
-    except (ValueError, TypeError):
-        raise ValueError(
-            construir_error_api(
-                code=ERROR_CODE_INVALID_PARAM,
-                message="Parámetro inválido",
-                description="_limit y _offset deben ser números enteros",
-            )
-        )
 
-    if not (1 <= limit <= 100) or offset < 0:
-        raise ValueError(
-            construir_error_api(
-                code=ERROR_CODE_INVALID_PARAM,
-                message="Parámetro inválido",
-                description="_limit debe estar entre 1 y 100, y _offset no puede ser negativo",
-            )
-        )
-
-    return limit, offset
 
 
 
