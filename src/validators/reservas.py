@@ -181,18 +181,3 @@ def validar_crear_reserva(datos: dict) -> dict:
         raise ValueError(payload_error, 400)
 
     return datos
-
-def validar_cambiar_estado_reserva(datos: dict) -> str:
-    """
-    Función temporal de prueba hasta que tu amigo la implemente.
-    """
-    if not isinstance(datos, dict) or "estado" not in datos:
-        raise ValueError(
-            {
-                "code": "ERROR_VALIDACION",
-                "message": "Falta el campo 'estado'",
-            },
-            400,
-        )
-
-    return str(datos["estado"]).strip().lower()
