@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, url_for
+from flask import Blueprint, jsonify, request
 from sqlalchemy.exc import IntegrityError
 from src.services.socios import (
     actualizar_socio_por_id,
@@ -6,7 +6,7 @@ from src.services.socios import (
     obtener_socio_por_id,
     obtener_socios,
 )
-from src.utils import construir_error_api
+from src.utils import construir_error_api, generar_links_paginacion
 
 socios_bp = Blueprint('socios', __name__)
 
@@ -40,32 +40,14 @@ def manejar_integridad_db(error):
 # si no hay resultados devuelve 204 sin contenido
 @socios_bp.route('/socios', methods=['GET'])
 def get_socios():
-    limit = request.args.get('_limit', 10, type=int)
-    offset = request.args.get('_offset', 0, type=int)
-    nombre = request.args.get('nombre')
-    activo = request.args.get('activo')
-
-    socios, total = obtener_socios(nombre, activo, limit, offset)
+    socios, total, limit, offset = obtener_socios(request.args)
 
     if not socios:
         return '', 204
 
     ult_offset = max(((total - 1) // limit) * limit, 0) if total > 0 else 0
 
-    enlaces = {
-        "_first": {"href": _generar_enlace(nombre, activo, limit, 0)},
-        "_prev": (
-            {"href": _generar_enlace(nombre, activo, limit, max(0, offset - limit))}
-            if offset > 0
-            else None
-        ),
-        "_next": (
-            {"href": _generar_enlace(nombre, activo, limit, offset + limit)}
-            if offset + limit < total
-            else None
-        ),
-        "_last": {"href": _generar_enlace(nombre, activo, limit, ult_offset)},
-    }
+    enlaces = generar_links_paginacion(total, limit, offset)
 
     return jsonify({"socios": socios, "_links": enlaces}), 200
 

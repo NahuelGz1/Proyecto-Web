@@ -32,11 +32,10 @@ from src.validators.canchas import validar_filtros_canchas
 from src.validators.reservas import (
     validar_filtros_reservas,
     validar_crear_reserva,
-    validar_cambiar_estado_reserva
 )
 
 
-def obtener_listado_reservas(args:dict):
+def obtener_listado_reservas(args: dict):
     filtros = validar_filtros_reservas(args)
     limit, offset = validar_paginacion(args)
     total = contar_reservas(filtros)

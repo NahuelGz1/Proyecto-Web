@@ -3,7 +3,6 @@ from src.services.reservas import (
     obtener_listado_reservas,
     obtener_reserva,
     crear_nueva_reserva,
-    cambiar_estado_reserva
 )
 from src.utils import generar_links_paginacion, procesar_error_api
 
@@ -45,6 +44,7 @@ def post_reserva():
     try:
         datos = request.get_json() or {}
 
+        # Pasa el JSON crudo. El servicio valida y crea.
         nueva_reserva = crear_nueva_reserva(datos)
 
         headers = {"Location": f"/reservas/{nueva_reserva['id']}"}
