@@ -5,7 +5,6 @@ from src.services.reservas import (
     crear_nueva_reserva, modificar_reserva
 )
 from src.utils import generar_links_paginacion, procesar_error_api
-from src.validators.reservas import validar_reserva_post
 
 reservas_bp = Blueprint("reservas", __name__)
 
@@ -45,14 +44,11 @@ def post_reserva():
     try:
         datos = request.get_json() or {}
 
-        #valida la estructura y tipos de datos en la capa de validadores
-        datos_validados = validar_reserva_post(datos)
+        # Pasa el JSON crudo. El servicio valida y crea.
+        nueva_reserva = crear_nueva_reserva(datos)
 
-        #llama al servicio para la lógica de negocio y persistencia
-        nueva_reserva = crear_nueva_reserva(datos_validados)
-
-        #retorna la respuesta exitosa 201 Created
-        return jsonify(nueva_reserva), 201
+        headers = {"Location": f"/reservas/{nueva_reserva['id']}"}
+        return jsonify(nueva_reserva), 201, headers
 
     except Exception as e:
         payload, status = procesar_error_api(e)
