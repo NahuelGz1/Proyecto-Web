@@ -137,9 +137,10 @@ def eliminar_cancha(cancha_id: int) -> None:
 # por ejemplo: excluye canchas reservadas entre las 18:00 y las 19:00 del 2026-03-30
 def _armar_where_disponibles(fecha, hora_inicio, hora_fin, filtros):
     condiciones = ["activa = 1"]
+    # la hora ya viene con segundos incluidos desde el validator, no hay que agregarle nada acá
     parametros = {
-        "inicio": f"{fecha} {hora_inicio}:00",
-        "fin": f"{fecha} {hora_fin}:00",
+        "inicio": f"{fecha} {hora_inicio}",
+        "fin": f"{fecha} {hora_fin}",
     }
 
     if filtros.get("id_deporte") is not None:

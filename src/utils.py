@@ -228,15 +228,15 @@ def validar_email(email: str) -> str:
 def validar_paginacion(args: dict):
 
     try:
-        limit = int(args.get("limit", 10))  #si limit en el diccionario args no existe, se asigna 10 por defecto
-        offset = int(args.get("offset", 0)) #si offset en el diccionario args no existe, se asigna 0 por defecto
+        limit = int(args.get("_limit", 10))  #si limit en el diccionario args no existe, se asigna 10 por defecto
+        offset = int(args.get("_offset", 0)) #si offset en el diccionario args no existe, se asigna 0 por defecto
     except ValueError:
         raise ValueError(construir_error_api(
             code=ERROR_CODE_INVALID_PARAM,
             message="Parámetro inválido",
             description="limit y offset deben ser números enteros"
         ))
-    if not (1 <= limit <= 10) or offset < 0:
+    if not (1 <= limit <= 100) or offset <= 0:
         raise ValueError(construir_error_api(
             code=ERROR_CODE_INVALID_PARAM,
             message="Parámetro inválido",
