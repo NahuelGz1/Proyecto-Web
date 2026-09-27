@@ -44,3 +44,81 @@ def obtener_listado_reservas(args:dict):
     reservas = listar_reservas(filtros, limit, offset) #consulta a la base de datos
 
     return reservas, total, limit, offset
+
+
+def obtener_reserva(id_reserva: int) -> dict:
+    reserva = obtener_reserva_por_id(id_reserva)
+
+    if not reserva:
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_RESERVA_NOT_FOUND,
+                message="Recurso no encontrado",
+                description=f"No se encontró la reserva con id {id_reserva}",
+            ),
+            404,
+        )
+
+    #convierte las fechas al formato ISO del Swagger
+    if "fecha_hora_inicio" in reserva and reserva["fecha_hora_inicio"]:
+        reserva["fecha_hora_inicio"] = reserva["fecha_hora_inicio"].isoformat()
+    if "fecha_hora_fin" in reserva and reserva["fecha_hora_fin"]:
+        reserva["fecha_hora_fin"] = reserva["fecha_hora_fin"].isoformat()
+
+    return reserva
+
+
+def crear_nueva_reserva(datos: dict) -> dict:
+    id_socio = datos.get("id_socio")
+    id_cancha = datos.get("id_cancha")
+    fecha_inicio = datos.get("fecha_hora_inicio")
+    fecha_fin = datos.get("fecha_hora_fin")
+
+    #validar que el socio exista en la base
+    socio = buscar_socio_por_id(id_socio)
+    if not socio:
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_SOCIO_NOT_FOUND,
+                message="Recurso no encontrado",
+                description=f"No se encontró el socio con id {id_socio}",
+            ),
+            404,
+        )
+
+    #validar que la cancha exista en la BD
+    cancha = obtener_cancha_por_id(id_cancha)
+    if not cancha:
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_CANCHA_NOT_FOUND,
+                message="Recurso no encontrado",
+                description=f"No se encontró la cancha con id {id_cancha}",
+            ),
+            404,
+        )
+
+    #validar superposición de horarios
+    if existe_superposicion(id_cancha, fecha_inicio, fecha_fin):
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_HORARIO_OCUPADO,
+                message="Horario no disponible",
+                description="La cancha ya se encuentra reservada en el rango horario solicitado",
+            ),
+            409,  # 409 Conflict
+        )
+
+    #crear la reserva en la base
+    nuevo_id = crear_reserva(
+        id_cancha=id_cancha,
+        id_socio=id_socio,
+        fecha_hora_inicio=fecha_inicio,
+        fecha_hora_fin=fecha_fin,
+        precio_hora=datos.get("precio_hora"),
+        precio_total=datos.get("precio_total"),
+        estado=ESTADO_CONFIRMADA,
+    )
+
+    #retorna la reserva creada
+    return obtener_reserva(nuevo_id)
