@@ -25,6 +25,8 @@ def validar_filtros_canchas(args):
     techada = args.get('techada', type=str)
     activa = args.get('activa', type=str)
 
+
+
     if techada is not None and techada.lower() not in ("true", "false"):
         raise ValueError(
             construir_error_api(
