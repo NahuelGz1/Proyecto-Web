@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from src.services.reservas import (
     obtener_listado_reservas,
     obtener_reserva,
-    crear_nueva_reserva
+    crear_nueva_reserva, modificar_reserva
 )
 from src.utils import generar_links_paginacion, procesar_error_api
 from src.validators.reservas import validar_reserva_post
@@ -57,3 +57,16 @@ def post_reserva():
     except Exception as e:
         payload, status = procesar_error_api(e)
         return jsonify(payload), status
+
+
+@reservas_bp.route("/reservas/<int:id_reserva>", methods=["PUT"])
+def put_reserva(id_reserva):
+    try:
+        body = request.get_json(silent=True)
+        reserva_actualizada = modificar_reserva(id_reserva, body)
+        return jsonify(reserva_actualizada), 200
+
+    except Exception as e:
+        payload, status = procesar_error_api(e)
+        return jsonify(payload), status
+

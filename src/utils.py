@@ -240,6 +240,6 @@ def validar_paginacion(args: dict):
         raise ValueError(construir_error_api(
             code=ERROR_CODE_INVALID_PARAM,
             message="Parámetro inválido",
-            description="limit debe estar entre 1 y 10, y offset no puede ser negativo"
+            description="limit debe estar entre 1 y 100, y offset no puede ser negativo"
         ))
     return limit, offset
