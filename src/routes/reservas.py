@@ -29,7 +29,7 @@ def get_reservas():
     return jsonify({"reservas": reservas, "_links": links}), 200
 
 
-@reservas_bp.route("/reservas/<int:id>", methods=["GET"])
+@reservas_bp.route("/reservas/<id>", methods=["GET"])
 def get_reserva_por_id(id: int):
     try:
         reserva = obtener_reserva(id)

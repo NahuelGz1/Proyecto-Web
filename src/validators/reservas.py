@@ -29,14 +29,25 @@ def validar_filtros_reservas(args: dict) -> dict:
     id_socio = args.get("id_socio")
     if id_socio:
         try:
-            filtros["id_socio"] = int(id_socio)
+            id_socio_val = int(id_socio)
+            if id_socio_val <= 0:
+                errores.append(
+                    {
+                        "code": "PARAM_INVALIDO",
+                        "message": "Parámetro inválido",
+                        "level": "error",
+                        "description": "El parámetro 'id_socio' debe ser un número entero positivo mayor a 0",
+                    }
+                )
+            else:
+                filtros["id_socio"] = id_socio_val
         except ValueError:
             errores.append(
                 {
-                    "code":"PARAM_INVALIDO",
-                    "message":"Parámetro inválido",
-                    "level":"error",
-                    "description":"El parámetro 'id_socio' debe ser un número entero válido"
+                    "code": "PARAM_INVALIDO",
+                    "message": "Parámetro inválido",
+                    "level": "error",
+                    "description": "El parámetro 'id_socio' debe ser un número entero válido",
                 }
             )
 
@@ -279,3 +290,5 @@ def validar_datos_actualizar_reserva(data: dict) -> dict:
         raise ValueError(payload, 400)
 
     return datos_limpios
+
+

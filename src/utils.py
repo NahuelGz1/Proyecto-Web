@@ -256,3 +256,21 @@ def validar_paginacion(args: dict):
             400
         )
     return limit, offset
+
+
+def validar_id(id):
+    try:
+        id_num = int(id)
+        if id_num <= 0:
+            raise ValueError()
+        return id_num
+    except (ValueError, TypeError):
+        raise ValueError(
+            construir_error_api(
+                code="invalid_id",
+                message="ID inválido",
+                level="error",
+                description="El ID debe ser un número entero positivo",
+            ),
+            400,
+        )
