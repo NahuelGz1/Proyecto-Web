@@ -70,6 +70,16 @@ def validar_body_nueva_cancha(body: dict) -> dict:
             )
         )
 
+    # rechaza cualquier campo que no sea de los 5 permitidos (lo pide el enunciado)
+    campos_permitidos = {"nombre", "id_deporte", "precio_hora", "techada", "activa"}
+    campos_desconocidos = set(body.keys()) - campos_permitidos
+    if campos_desconocidos:
+        raise ValueError(construir_error_api(
+            code=ERROR_CODE_INVALID_BODY,
+            message='Cuerpo de la solicitud inválido',
+            description=f"Campos desconocidos: {', '.join(campos_desconocidos)}"
+        ))
+
     errores = []
 
     nombre = None
@@ -149,7 +159,7 @@ def validar_body_modificar_cancha(body: dict) -> dict:
     if "techada" in body:
         try:
             campos_actualizados["techada"] = validar_booleano(
-                body.get("techada"), "techada"
+                body.get("techada"), "techada", default=False
             )
         except ValueError as e:
             errores.extend(e.args[0]["errors"])
@@ -157,7 +167,7 @@ def validar_body_modificar_cancha(body: dict) -> dict:
     if "activa" in body:
         try:
             campos_actualizados["activa"] = validar_booleano(
-                body.get("activa"), "activa"
+                body.get("activa"), "activa", default=True
             )
         except ValueError as e:
             errores.extend(e.args[0]["errors"])
@@ -216,14 +226,14 @@ def validar_disponibilidad(args):
         )
 
     try:
-        hora_inicio = datetime.strptime(hora_inicio_str, "%H:%M")
-        hora_fin = datetime.strptime(hora_fin_str, "%H:%M")
+        hora_inicio = datetime.strptime(hora_inicio_str, "%H:%M:%S")
+        hora_fin = datetime.strptime(hora_fin_str, "%H:%M:%S")
     except ValueError:
         raise ValueError(
             construir_error_api(
                 code=ERROR_CODE_INVALID_PARAM,
                 message="Parámetro inválido",
-                description="hora_inicio y hora_fin deben tener el formato HH:MM",
+                description="hora_inicio y hora_fin deben tener el formato HH:00:00",
             )
         )
 
