@@ -7,3 +7,7 @@ __pycache__/
 *.sqlite3
 docker-compose.yml
 .env
+.postman/
+postman/
+probador.py
+probador_romper.py

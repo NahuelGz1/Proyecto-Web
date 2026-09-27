@@ -1,172 +1,189 @@
-from src.repositories.db import conexion, obtener_cursor
+from src.repositories.db import ejecutar_consulta, ejecutar_mutacion
+from src.utils import convertir_booleanos
 
 
-def _armar_where(filtros):
+# construye dinamicamente los filtros SQL para listar o contar canchas
+# por ejemplo: si le pasas {"id_deporte": 1, "techada": True}, genera 'WHERE id_deporte = :id_deporte AND techada = :techada'
+def _armar_where(filtros: dict):
     condiciones = []
-    parametros = []
+    parametros = {}
 
-    if filtros["id_deporte"] is not None:
-        condiciones.append("id_deporte = %s")
-        parametros.append(filtros["id_deporte"])
+    if filtros.get("id_deporte") is not None:
+        condiciones.append("id_deporte = :id_deporte")
+        parametros["id_deporte"] = filtros["id_deporte"]
 
-    if filtros["nombre"]:
-        condiciones.append("nombre LIKE %s")
-        parametros.append(f"%{filtros['nombre']}%")
+    if filtros.get("nombre"):
+        condiciones.append("nombre LIKE :nombre")
+        parametros["nombre"] = f"%{filtros['nombre']}%"
 
-    if filtros["techada"] is not None:
-        condiciones.append("techada = %s")
-        parametros.append(filtros["techada"])
+    if filtros.get("techada") is not None:
+        condiciones.append("techada = :techada")
+        parametros["techada"] = filtros["techada"]
 
-    if filtros["activa"] is not None:
-        condiciones.append("activa = %s")
-        parametros.append(filtros["activa"])
+    if filtros.get("activa") is not None:
+        condiciones.append("activa = :activa")
+        parametros["activa"] = filtros["activa"]
 
     where_sql = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
     return where_sql, parametros
 
 
-def contar_canchas(filtros):
+# cuenta el total de canchas que coinciden con los filtros para la paginacion
+# por ejemplo: devuelve 8 si hay 8 canchas techadas
+def contar_canchas(filtros: dict) -> int:
     where_sql, params = _armar_where(filtros)
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        cursor.execute(f"SELECT COUNT(*) AS total FROM canchas {where_sql};", tuple(params))
-        resultado = cursor.fetchone()
-        return resultado["total"]
-    finally:
-        cursor.close()
-        connection.close()
+    sql = f"SELECT COUNT(*) AS total FROM canchas {where_sql};"
+    filas = ejecutar_consulta(sql, params)
+    return filas[0]["total"] if filas else 0
 
 
-def listar_canchas(filtros, limit, offset):
+# trae la lista de canchas paginada y convierte los campos 0/1 (techada, activa) a booleanos
+# por ejemplo: listar_canchas({}, limit=5, offset=0) trae las primeras 5 canchas
+def listar_canchas(filtros: dict, limit: int, offset: int) -> list[dict]:
     where_sql, params = _armar_where(filtros)
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        query = f"""
-            SELECT id, nombre, id_deporte, precio_hora, techada, activa
-            FROM canchas
-            {where_sql}
-            ORDER BY id ASC
-            LIMIT %s OFFSET %s;
-        """
-        cursor.execute(query, tuple(params) + (limit, offset))
-        return cursor.fetchall()
-    finally:
-        cursor.close()
-        connection.close()
+    params["limit"] = limit
+    params["offset"] = offset
+
+    sql = f"""
+        SELECT id, nombre, id_deporte, precio_hora, techada, activa
+        FROM canchas
+        {where_sql}
+        ORDER BY id ASC
+        LIMIT :limit OFFSET :offset;
+    """
+    return convertir_booleanos(ejecutar_consulta(sql, params))
 
 
-def obtener_cancha_por_id(cancha_id):
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        cursor.execute(
-            "SELECT id, nombre, id_deporte, precio_hora, techada, activa FROM canchas WHERE id = %s;",
-            (cancha_id,)
-        )
-        return cursor.fetchone()
-    finally:
-        cursor.close()
-        connection.close()
-
-def existe_deporte(id_deporte):
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        cursor.execute("SELECT id FROM deportes WHERE id = %s;", (id_deporte,))
-        return cursor.fetchone() is not None
-    finally:
-        cursor.close()
-        connection.close()
-
-def crear_cancha(datos):
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        query = """
-            INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
-            VALUES (%s, %s, %s, %s, %s);
-        """
-        cursor.execute(query, (
-            datos["nombre"],
-            datos["id_deporte"],
-            datos["precio_hora"],
-            datos["techada"],
-            datos["activa"],
-        ))
-        connection.commit()
-        return cursor.lastrowid
-    finally:
-        cursor.close()
-        connection.close()
-
-def registrar_cancha():
-    return
+# busca una cancha por su id unico
+# por ejemplo: obtener_cancha_por_id(2) devuelve {"id": 2, "nombre": "Cancha 1", "techada": True, ...} o None
+def obtener_cancha_por_id(cancha_id: int) -> dict | None:
+    sql = """
+          SELECT id, nombre, id_deporte, precio_hora, techada, activa
+          FROM canchas
+          WHERE id = :cancha_id; \
+          """
+    filas = ejecutar_consulta(sql, {"cancha_id": cancha_id})
+    if filas:
+        return convertir_booleanos(filas)[0]
+    return None
 
 
+# verifica si existe un deporte registrado con el id especificado
+# por ejemplo: devuelve True si existe el deporte id=1 (Fútbol)
 def existe_deporte(id_deporte: int) -> bool:
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        cursor.execute("SELECT id FROM deportes WHERE id = %s;", (id_deporte,))
-        return cursor.fetchone() is not None
-    finally:
-        cursor.close()
-        connection.close()
+    sql = "SELECT id FROM deportes WHERE id = :id_deporte;"
+    filas = ejecutar_consulta(sql, {"id_deporte": id_deporte})
+    return len(filas) > 0
 
 
+# inserta una nueva cancha en la base de datos y retorna el id asignado
+# por ejemplo: crear_cancha("Cancha Central", 1, 1500, True, True) devuelve 5
 def crear_cancha(
-    nombre: str, id_deporte: int, precio_hora: int, techada: bool, activa: bool
+        nombre: str, id_deporte: int, precio_hora: int, techada: bool, activa: bool
 ) -> int:
-    connection = conexion()
-    cursor = obtener_cursor(connection)
-    try:
-        query = """
-            INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
-            VALUES (%s, %s, %s, %s, %s);
-        """
-        cursor.execute(query, (
-            nombre,
-            id_deporte,
-            precio_hora,
-            techada,
-            activa,
-        ))
-        connection.commit()
-        return cursor.lastrowid
-    finally:
-        cursor.close()
-        connection.close()
-        
+    sql = """
+          INSERT INTO canchas (nombre, id_deporte, precio_hora, techada, activa)
+          VALUES (:nombre, :id_deporte, :precio_hora, :techada, :activa); \
+          """
+    return ejecutar_mutacion(
+        sql,
+        {
+            "nombre": nombre,
+            "id_deporte": id_deporte,
+            "precio_hora": precio_hora,
+            "techada": techada,
+            "activa": activa,
+        },
+    )
 
+
+# actualiza parcialmente los datos de una cancha segun los campos recibidos (PATCH)
+# por ejemplo: si le pasas {"precio_hora": 2000}, actualiza solo el precio de esa cancha
 def modificar_cancha(cancha_id: int, campos: dict) -> None:
-    pass
+    if not campos:
+        return
+
+    set_clauses = [f"{campo} = :{campo}" for campo in campos.keys()]
+    set_sql = ", ".join(set_clauses)
+
+    sql = f"""
+        UPDATE canchas
+        SET {set_sql}
+        WHERE id = :cancha_id;
+    """
+
+    parametros = dict(campos)
+    parametros["cancha_id"] = cancha_id
+
+    ejecutar_mutacion(sql, parametros)
 
 
+# comprueba si la cancha tiene al menos una reserva vinculada (evita borrar canchas con historial)
+# por ejemplo: devuelve True si la cancha id=3 ya fue reservada alguna vez
 def tiene_reservas_asociadas(cancha_id: int) -> bool:
-    pass
+    sql = "SELECT COUNT(*) AS total FROM reservas WHERE id_cancha = :cancha_id;"
+    filas = ejecutar_consulta(sql, {"cancha_id": cancha_id})
+    return filas[0]["total"] > 0 if filas else False
 
 
+# elimina fisicamente el registro de la cancha por su id
+# por ejemplo: eliminar_cancha(4) borra la cancha id=4
 def eliminar_cancha(cancha_id: int) -> None:
-    pass
+    sql = "DELETE FROM canchas WHERE id = :cancha_id;"
+    ejecutar_mutacion(sql, {"cancha_id": cancha_id})
 
 
-def contar_canchas_disponibles(
-        fecha: str, hora_inicio: str, hora_fin: str, filtros: dict
-) -> int:
-    pass
+# funcion auxiliar para filtrar canchas activas que NO se solapen con reservas confirmadas en ese rango horario
+# por ejemplo: excluye canchas reservadas entre las 18:00 y las 19:00 del 2026-03-30
+def _armar_where_disponibles(fecha, hora_inicio, hora_fin, filtros):
+    condiciones = ["activa = 1"]
+    # la hora ya viene con segundos incluidos desde el validator, no hay que agregarle nada acá
+    parametros = {
+        "inicio": f"{fecha} {hora_inicio}",
+        "fin": f"{fecha} {hora_fin}",
+    }
+
+    if filtros.get("id_deporte") is not None:
+        condiciones.append("id_deporte = :id_deporte")
+        parametros["id_deporte"] = filtros["id_deporte"]
+
+    if filtros.get("techada") is not None:
+        condiciones.append("techada = :techada")
+        parametros["techada"] = filtros["techada"]
+
+    condiciones.append("""
+        id NOT IN (
+            SELECT id_cancha FROM reservas
+            WHERE estado = 'confirmada'
+              AND fecha_hora_inicio < :fin
+              AND fecha_hora_fin > :inicio
+        )
+    """)
+
+    where_sql = f"WHERE {' AND '.join(condiciones)}"
+    return where_sql, parametros
 
 
-def listar_canchas_disponibles(
-        fecha: str,
-        hora_inicio: str,
-        hora_fin: str,
-        filtros: dict,
-        limit: int,
-        offset: int,
-) -> list[dict]:
-    pass
+# cuenta la cantidad total de canchas libres para la fecha, horario y filtros seleccionados
+# por ejemplo: devuelve 3 si hay 3 canchas libres hoy de 18:00 a 19:00
+def contar_canchas_disponibles(fecha: str, hora_inicio: str, hora_fin: str, filtros: dict) -> int:
+    where_sql, params = _armar_where_disponibles(fecha, hora_inicio, hora_fin, filtros)
+    sql = f"SELECT COUNT(*) AS total FROM canchas {where_sql};"
+    filas = ejecutar_consulta(sql, params)
+    return filas[0]["total"] if filas else 0
 
 
-
+# devuelve la lista paginada de canchas disponibles en la fecha y rango horario indicados
+# por ejemplo: devuelve las canchas libres de 18:00 a 19:00 formateando techada/activa como booleanos
+def listar_canchas_disponibles(fecha: str, hora_inicio: str, hora_fin: str, filtros: dict, limit: int, offset: int) -> list[dict]:
+    where_sql, params = _armar_where_disponibles(fecha, hora_inicio, hora_fin, filtros)
+    params["limit"] = limit
+    params["offset"] = offset
+    sql = f"""
+        SELECT id, nombre, id_deporte, precio_hora, techada, activa
+        FROM canchas
+        {where_sql}
+        ORDER BY id ASC
+        LIMIT :limit OFFSET :offset;
+    """
+    return convertir_booleanos(ejecutar_consulta(sql, params))
