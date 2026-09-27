@@ -5,7 +5,7 @@ from src.utils import construir_error_api
 from src.routes.deportes import deportes_bp
 from src.routes.socios import socios_bp
 from src.routes.canchas import canchas_bp
-
+from src.routes.reservas import reservas_bp
 
 
 # arrancamos la aplicacion de flask
@@ -50,6 +50,7 @@ def manejar_error_inesperado(error):
 app.register_blueprint(deportes_bp, url_prefix=BASE_URL)
 app.register_blueprint(socios_bp, url_prefix=BASE_URL)
 app.register_blueprint(canchas_bp, url_prefix=BASE_URL)
+app.register_blueprint(reservas_bp, url_prefix=BASE_URL)
 
 
 
