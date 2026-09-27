@@ -57,8 +57,7 @@ def post_cancha():
 def patch_cancha(cancha_id: int):
     data = request.get_json(silent=True)
     actualizar_cancha(cancha_id, data)
-    cancha = obtener_cancha(cancha_id)
-    return jsonify(cancha), 200
+    return '', 204
 
 
 # elimina permanentemente una cancha si no posee reservas asociadas

@@ -115,7 +115,7 @@ def validar_crear_reserva(datos: dict) -> dict:
     """
     errores = []
 
-    #campos obligatorios
+
     campos_requeridos = [
         "id_socio", "id_cancha", "fecha_hora_inicio",
         "fecha_hora_fin", "precio_hora", "precio_total"
@@ -182,17 +182,100 @@ def validar_crear_reserva(datos: dict) -> dict:
 
     return datos
 
-def validar_cambiar_estado_reserva(datos: dict) -> str:
-    """
-    Función temporal de prueba hasta que tu amigo la implemente.
-    """
-    if not isinstance(datos, dict) or "estado" not in datos:
-        raise ValueError(
+
+
+def validar_datos_actualizar_reserva(data: dict) -> dict:
+    if not data or not isinstance(data, dict):
+        payload = construir_error_api(
+            code="CUERPO_INVALIDO",
+            message="El cuerpo de la solicitud no puede estar vacío y debe ser un JSON válido",
+            description="Se esperaba un objeto JSON en el cuerpo del request",
+        )
+        raise ValueError(payload, 400)
+
+    errores = []
+    datos_limpios = {}
+
+    #  Validar id_cancha
+    if "id_cancha" in data:
+        try:
+            datos_limpios["id_cancha"] = int(str(data["id_cancha"]).strip())
+        except ValueError:
+            errores.append(
+                {
+                    "code": "PARAMETRO_INVALIDO",
+                    "message": "El campo 'id_cancha' debe ser un número entero",
+                    "level": "error",
+                    "description": f"Se recibió {data.get('id_cancha')}",
+                }
+            )
+
+    #  Validar estado
+    if "estado" in data:
+        estado = str(data["estado"]).strip().lower()
+        if estado not in ("confirmada", "cancelada", "finalizada"):
+            errores.append(
+                {
+                    "code": "PARAMETRO_INVALIDO",
+                    "message": "El estado de la reserva es inválido",
+                    "level": "error",
+                    "description": f"Se recibió '{data.get('estado')}'. Valores permitidos: confirmada, cancelada, finalizada",
+                }
+            )
+        else:
+            datos_limpios["estado"] = estado
+
+    #  Validar fechas/horas si se envían en el PUT (formato: YYYY-MM-DD HH:MM:SS)
+    inicio = None
+    fin = None
+
+    if "fecha_hora_inicio" in data:
+        try:
+            inicio = datetime.strptime(
+                str(data["fecha_hora_inicio"]).strip(), "%Y-%m-%d %H:%M:%S"
+            )
+            datos_limpios["fecha_hora_inicio"] = data[
+                "fecha_hora_inicio"
+            ].strip()
+        except ValueError:
+            errores.append(
+                {
+                    "code": "PARAMETRO_INVALIDO",
+                    "message": "El formato de 'fecha_hora_inicio' es inválido",
+                    "level": "error",
+                    "description": "Debe seguir el formato 'YYYY-MM-DD HH:MM:SS'",
+                }
+            )
+
+    if "fecha_hora_fin" in data:
+        try:
+            fin = datetime.strptime(
+                str(data["fecha_hora_fin"]).strip(), "%Y-%m-%d %H:%M:%S"
+            )
+            datos_limpios["fecha_hora_fin"] = data["fecha_hora_fin"].strip()
+        except ValueError:
+            errores.append(
+                {
+                    "code": "PARAMETRO_INVALIDO",
+                    "message": "El formato de 'fecha_hora_fin' es inválido",
+                    "level": "error",
+                    "description": "Debe seguir el formato 'YYYY-MM-DD HH:MM:SS'",
+                }
+            )
+
+    if inicio and fin and inicio >= fin:
+        errores.append(
             {
-                "code": "ERROR_VALIDACION",
-                "message": "Falta el campo 'estado'",
-            },
-            400,
+                "code": "PARAMETRO_INVALIDO",
+                "message": "Rango de horarios incoherente",
+                "level": "error",
+                "description": "'fecha_hora_inicio' debe ser anterior a 'fecha_hora_fin'",
+            }
         )
 
-    return str(datos["estado"]).strip().lower()
+    # Si hay errores acumulados, corta el flujo con 400
+    if errores:
+        payload = construir_error_api(errores_multiples=errores)
+        raise ValueError(payload, 400)
+
+    return datos_limpios

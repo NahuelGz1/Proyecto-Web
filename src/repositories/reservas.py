@@ -135,7 +135,7 @@ def crear_reserva(
 
 # actualiza dinamicamente uno o mas campos de un registro de reserva existente
 # por ejemplo: modifica los campos {"estado": "cancelada"} para el id correspondiente
-def modificar_reserva(reserva_id: int, campos: dict) -> None:
+def actualizar_reserva(reserva_id: int, campos: dict) -> None:
     if not campos:
         return
 
@@ -165,3 +165,16 @@ def cancelar_reserva(reserva_id: int) -> None:
 def eliminar_reserva(reserva_id: int) -> None:
     sql = "DELETE FROM reservas WHERE id = :reserva_id;"
     ejecutar_mutacion(sql, {"reserva_id": reserva_id})
+
+
+
+
+def obtener_reserva_por_id(id_reserva: int):
+    sql = """
+          SELECT id, id_socio, id_cancha, fecha_hora_inicio, fecha_hora_fin,
+                 precio_hora, precio_total, estado
+          FROM reservas
+          WHERE id = :id_reserva \
+          """
+    filas = ejecutar_consulta(sql, {"id_reserva": id_reserva})
+    return filas[0] if filas else None

@@ -22,7 +22,7 @@ from src.repositories.reservas import (
     crear_reserva,
     existe_superposicion,
     listar_reservas,
-    modificar_reserva,
+    actualizar_reserva,
     obtener_reserva_por_id,
 )
 from src.repositories.socios import buscar_socio_por_id
@@ -33,6 +33,8 @@ from src.validators.reservas import (
     validar_filtros_reservas,
     validar_crear_reserva,
 )
+from src.utils import construir_error_api
+from src.validators.reservas import validar_datos_actualizar_reserva
 
 
 def obtener_listado_reservas(args: dict):
@@ -126,4 +128,30 @@ def crear_nueva_reserva(datos):
         estado=ESTADO_CONFIRMADA,
     )
 
+    #retorna la reserva creada
     return obtener_reserva(nuevo_id)
+
+
+
+
+
+def modificar_reserva(id_reserva: int, body: dict):
+    # 1. Validar formato de los datos que vienen en el body (lanza 400 si falla)
+    datos_validados = validar_datos_actualizar_reserva(body)
+
+    # 2. Verificar que la reserva exista en la base de datos (404)
+    reserva_existente = obtener_reserva_por_id(id_reserva)
+    if not reserva_existente:
+        payload = construir_error_api(
+            code="NOT_FOUND",
+            message="Reserva no encontrada",
+            description=f"No se encontró ninguna reserva con el id {id_reserva}",
+        )
+        # Lanzamos ValueError con código 404; procesar_error_api lo respetará
+        raise ValueError(payload, 404)
+
+    # 3. Ejecutar actualización
+    actualizar_reserva(id_reserva, datos_validados)
+
+    # 4. Devolver la entidad actualizada
+    return obtener_reserva_por_id(id_reserva)
