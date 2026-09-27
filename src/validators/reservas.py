@@ -108,7 +108,7 @@ def validar_filtros_reservas(args: dict) -> dict:
 
 
 
-def validar_reserva_post(datos: dict) -> dict:
+def validar_crear_reserva(datos: dict) -> dict:
     """
     Valida el cuerpo JSON para el endpoint POST /reservas
     acumulando errores según la especificación de Swagger.

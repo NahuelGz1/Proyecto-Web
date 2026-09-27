@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta
 
 from src.constants import (
@@ -29,24 +28,29 @@ from src.repositories.reservas import (
 from src.repositories.socios import buscar_socio_por_id
 from src.utils import construir_error_api, validar_paginacion
 from src.validators.canchas import validar_filtros_canchas
-from src.validators.reservas import validar_filtros_reservas
+
+from src.validators.reservas import (
+    validar_filtros_reservas,
+    validar_crear_reserva,
+    validar_cambiar_estado_reserva
+)
 
 
 def obtener_listado_reservas(args:dict):
-
     filtros = validar_filtros_reservas(args)
     limit, offset = validar_paginacion(args)
-    total=contar_reservas(filtros)
+    total = contar_reservas(filtros)
 
     if total == 0:
-        return None #señal para que la ruta devuelva un 204 sin contenido
+        return None # señal para que la ruta devuelva un 204 sin contenido
 
-    reservas = listar_reservas(filtros, limit, offset) #consulta a la base de datos
+    reservas = listar_reservas(filtros, limit, offset) # consulta a la base de datos
 
     return reservas, total, limit, offset
 
 
-def obtener_reserva(id_reserva: int) -> dict:
+def obtener_reserva(id_reserva):
+    """Obtiene una reserva por ID y formatea sus fechas"""
     reserva = obtener_reserva_por_id(id_reserva)
 
     if not reserva:
@@ -59,7 +63,7 @@ def obtener_reserva(id_reserva: int) -> dict:
             404,
         )
 
-    #convierte las fechas al formato ISO del Swagger
+    # convierte las fechas al formato ISO del Swagger
     if "fecha_hora_inicio" in reserva and reserva["fecha_hora_inicio"]:
         reserva["fecha_hora_inicio"] = reserva["fecha_hora_inicio"].isoformat()
     if "fecha_hora_fin" in reserva and reserva["fecha_hora_fin"]:
@@ -68,13 +72,16 @@ def obtener_reserva(id_reserva: int) -> dict:
     return reserva
 
 
-def crear_nueva_reserva(datos: dict) -> dict:
-    id_socio = datos.get("id_socio")
-    id_cancha = datos.get("id_cancha")
-    fecha_inicio = datos.get("fecha_hora_inicio")
-    fecha_fin = datos.get("fecha_hora_fin")
+def crear_nueva_reserva(datos):
+    """Valida los datos y crea la reserva si todo es correcto"""
+    datos_validados = validar_crear_reserva(datos)
 
-    #validar que el socio exista en la base
+    id_socio = datos_validados.get("id_socio")
+    id_cancha = datos_validados.get("id_cancha")
+    fecha_inicio = datos_validados.get("fecha_hora_inicio")
+    fecha_fin = datos_validados.get("fecha_hora_fin")
+
+    # validar que el socio exista en la base
     socio = buscar_socio_por_id(id_socio)
     if not socio:
         raise ValueError(
@@ -86,7 +93,7 @@ def crear_nueva_reserva(datos: dict) -> dict:
             404,
         )
 
-    #validar que la cancha exista en la BD
+    # validar que la cancha exista en la BD
     cancha = obtener_cancha_por_id(id_cancha)
     if not cancha:
         raise ValueError(
@@ -98,7 +105,7 @@ def crear_nueva_reserva(datos: dict) -> dict:
             404,
         )
 
-    #validar superposición de horarios
+    # validar superposición de horarios
     if existe_superposicion(id_cancha, fecha_inicio, fecha_fin):
         raise ValueError(
             construir_error_api(
@@ -106,19 +113,18 @@ def crear_nueva_reserva(datos: dict) -> dict:
                 message="Horario no disponible",
                 description="La cancha ya se encuentra reservada en el rango horario solicitado",
             ),
-            409,  # 409 Conflict
+            409,
         )
 
-    #crear la reserva en la base
+    # crear la reserva en la base
     nuevo_id = crear_reserva(
         id_cancha=id_cancha,
         id_socio=id_socio,
         fecha_hora_inicio=fecha_inicio,
         fecha_hora_fin=fecha_fin,
-        precio_hora=datos.get("precio_hora"),
-        precio_total=datos.get("precio_total"),
+        precio_hora=datos_validados.get("precio_hora"),
+        precio_total=datos_validados.get("precio_total"),
         estado=ESTADO_CONFIRMADA,
     )
 
-    #retorna la reserva creada
     return obtener_reserva(nuevo_id)
