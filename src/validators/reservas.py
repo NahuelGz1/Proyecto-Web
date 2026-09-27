@@ -1,8 +1,8 @@
 from src.constants import ERROR_CODE_INVALID_PARAM
 from src.utils import construir_error_api
+from datetime import datetime
 
-#esta funcion valida los filtros que se pueden pasar por query params a la ruta de reservas, es mas que nada para
-#lo que es el postman cuando colocas la ruta y le pasas los query params, para que no rompa la aplicacion y devuelva un error 400 con el mensaje correspondiente
+# esta funcion valida los filtros que se pueden pasar por query params a la ruta de reservas...
 def validar_filtros_reservas(args: dict) -> dict:
     """
     PRE CONDICIONES:
@@ -12,11 +12,10 @@ def validar_filtros_reservas(args: dict) -> dict:
     filtros = {}
     errores = []
 
-
     id_cancha = args.get("id_cancha")
     if id_cancha:
         try:
-           filtros["id_cancha"] = int(id_cancha)
+            filtros["id_cancha"] = int(id_cancha)
         except ValueError:
             errores.append(
                 {
@@ -41,7 +40,6 @@ def validar_filtros_reservas(args: dict) -> dict:
                 }
             )
 
-
     estado = args.get("estado")
     if estado:
         estado_limpio = estado.strip().lower()
@@ -57,10 +55,8 @@ def validar_filtros_reservas(args: dict) -> dict:
         else:
             filtros["estado"] = estado_limpio
 
-
     fecha_desde = args.get("fecha_desde")
     fecha_desde_valida = False
-
     if fecha_desde:
         try:
             datetime.strptime(fecha_desde.strip(), "%Y-%m-%d")
@@ -75,7 +71,6 @@ def validar_filtros_reservas(args: dict) -> dict:
                     "description":f"El parámetro 'fecha_desde' debe tener el formato 'YYYY-MM-DD'. Valor recibido: '{fecha_desde}'"
                 }
             )
-
 
     fecha_hasta = args.get("fecha_hasta")
     fecha_hasta_valida = False
@@ -105,12 +100,84 @@ def validar_filtros_reservas(args: dict) -> dict:
                 }
             )
 
-    if errores: #si el diccionario errores tiene un elemento, va a entrar al if
+    if errores:
         payload_error = construir_error_api(errores_multiples=errores)
-        raise ValueError(payload_error, 400)                                 # se detiene la funcion y se arroja el json con los errores/error y el codigo 400
-
+        raise ValueError(payload_error, 400)
 
     return filtros
 
 
 
+def validar_reserva_post(datos: dict) -> dict:
+    """
+    Valida el cuerpo JSON para el endpoint POST /reservas
+    acumulando errores según la especificación de Swagger.
+    """
+    errores = []
+
+    #campos obligatorios
+    campos_requeridos = [
+        "id_socio", "id_cancha", "fecha_hora_inicio",
+        "fecha_hora_fin", "precio_hora", "precio_total"
+    ]
+    for campo in campos_requeridos:
+        if campo not in datos or datos[campo] is None:
+            errores.append({
+                "code": "ERROR_VALIDACION",
+                "message": "El cuerpo de la solicitud es inválido",
+                "level": "error",
+                "description": f"El campo '{campo}' es obligatorio"
+            })
+
+    #validaciones de números enteros positivos
+    for campo in ["precio_hora", "precio_total", "id_socio", "id_cancha"]:
+        valor = datos.get(campo)
+        if valor is not None and (not isinstance(valor, int) or valor <= 0):
+            errores.append({
+                "code": "ERROR_VALIDACION",
+                "message": "El cuerpo de la solicitud es inválido",
+                "level": "error",
+                "description": f"El campo '{campo}' debe ser un entero mayor a cero"
+            })
+
+    #validaciones de fechas ISO
+    inicio_valido = False
+    fin_valido = False
+
+    if datos.get("fecha_hora_inicio"):
+        try:
+            inicio = datetime.fromisoformat(datos["fecha_hora_inicio"])
+            inicio_valido = True
+        except (ValueError, TypeError):
+            errores.append({
+                "code": "ERROR_VALIDACION",
+                "message": "El cuerpo de la solicitud es inválido",
+                "level": "error",
+                "description": "El campo 'fecha_hora_inicio' debe ser una fecha/hora en formato ISO 8601 válida"
+            })
+
+    if datos.get("fecha_hora_fin"):
+        try:
+            fin = datetime.fromisoformat(datos["fecha_hora_fin"])
+            fin_valido = True
+        except (ValueError, TypeError):
+            errores.append({
+                "code": "ERROR_VALIDACION",
+                "message": "El cuerpo de la solicitud es inválido",
+                "level": "error",
+                "description": "El campo 'fecha_hora_fin' debe ser una fecha/hora en formato ISO 8601 válida"
+            })
+
+    if inicio_valido and fin_valido and inicio >= fin:
+        errores.append({
+            "code": "ERROR_VALIDACION",
+            "message": "El cuerpo de la solicitud es inválido",
+            "level": "error",
+            "description": "La 'fecha_hora_inicio' debe ser anterior a 'fecha_hora_fin'"
+        })
+
+    if errores:
+        payload_error = construir_error_api(errores_multiples=errores)
+        raise ValueError(payload_error, 400)
+
+    return datos
