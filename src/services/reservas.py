@@ -1,166 +1,211 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 
 from src.constants import (
-    DURACION_MAXIMA_HORAS,
-    DURACION_MINIMA_HORAS,
     ERROR_CODE_CANCHA_NOT_FOUND,
     ERROR_CODE_HORARIO_OCUPADO,
-    ERROR_CODE_INVALID_BODY,
-    ERROR_CODE_INVALID_PARAM,
     ERROR_CODE_RESERVA_NOT_FOUND,
     ERROR_CODE_SOCIO_NOT_FOUND,
     ERROR_CODE_TRANSICION_INVALIDA,
     ESTADO_CANCELADA,
     ESTADO_CONFIRMADA,
     ESTADO_FINALIZADA,
-    HORA_APERTURA,
-    HORA_CIERRE,
 )
-
-from src.repositories.canchas import obtener_cancha_por_id
-from src.repositories.reservas import (
-    actualizar_reserva,
-    contar_reservas,
-    crear_reserva,
-    existe_superposicion,
-    listar_reservas,
-    obtener_reserva_por_id,
-)
-from src.repositories.socios import buscar_socio_por_id
-
-from src.utils import (
-    construir_error_api,
-    validar_id,
-    validar_mayor_a_uno,
-    validar_paginacion,
-)
-
-from src.validators.canchas import validar_filtros_canchas
-from src.validators.reservas import (
-    validar_crear_reserva,
-    validar_datos_actualizar_reserva,
-    validar_filtros_reservas,
-)
+from src.repositories import reservas as reservas_repository
+from src.utils import construir_error_api
 
 
-def obtener_listado_reservas(args: dict):
-    filtros = validar_filtros_reservas(args)
-    limit, offset = validar_paginacion(args)
-    total = contar_reservas(filtros)
-
-    if total == 0:
-        return None # señal para que la ruta devuelva un 204 sin contenido
-
-    reservas = listar_reservas(filtros, limit, offset) # consulta a la base de datos
-
-    return reservas, total, limit, offset
+def listar_reservas(filtros: dict, limit: int, offset: int):
+    return reservas_repository.obtener_todas(
+        filtros=filtros, limit=limit, offset=offset
+    )
 
 
-def obtener_reserva(id_reserva):
-    """Obtiene una reserva por ID y formatea sus fechas"""
-    id_reserva = validar_id(id_reserva)
+def obtener_listado_reservas(filtros: dict, limit: int, offset: int):
+    return listar_reservas(filtros, limit, offset)
 
-    reserva = obtener_reserva_por_id(id_reserva)
+
+def obtener_reserva_por_id(id_reserva: int):
+    reserva = reservas_repository.obtener_por_id(id_reserva)
     if not reserva:
         raise ValueError(
             construir_error_api(
                 code=ERROR_CODE_RESERVA_NOT_FOUND,
-                message="Recurso no encontrado",
-                description=f"No se encontró la reserva con id {id_reserva}",
+                message="Reserva no encontrada",
+                level="error",
+                description=f"No se encontró ninguna reserva con el ID {id_reserva}",
             ),
             404,
         )
-
-    # convierte las fechas al formato ISO del Swagger
-    if "fecha_hora_inicio" in reserva and reserva["fecha_hora_inicio"]:
-        reserva["fecha_hora_inicio"] = reserva["fecha_hora_inicio"].isoformat()
-    if "fecha_hora_fin" in reserva and reserva["fecha_hora_fin"]:
-        reserva["fecha_hora_fin"] = reserva["fecha_hora_fin"].isoformat()
-
     return reserva
 
 
-def crear_nueva_reserva(datos):
-    """Valida los datos y crea la reserva si todo es correcto"""
-    datos_validados = validar_crear_reserva(datos)
+def obtener_reserva(id_reserva: int):
+    return obtener_reserva_por_id(id_reserva)
 
-    id_socio = datos_validados.get("id_socio")
-    id_cancha = datos_validados.get("id_cancha")
-    fecha_inicio = datos_validados.get("fecha_hora_inicio")
-    fecha_fin = datos_validados.get("fecha_hora_fin")
 
-    # validar que el socio exista en la base
-    socio = buscar_socio_por_id(id_socio)
+def crear_reserva(datos: dict):
+    #validar que la fecha de inicio no sea pasada
+    try:
+        fecha_inicio_raw = datos.get("fecha_hora_inicio", "")
+        if isinstance(fecha_inicio_raw, str):
+            fecha_inicio = datetime.fromisoformat(fecha_inicio_raw.replace("Z", "+00:00"))
+        else:
+            fecha_inicio = fecha_inicio_raw
+
+        ahora = datetime.now(fecha_inicio.tzinfo or timezone.utc)
+        if fecha_inicio < ahora:
+            raise ValueError(
+                construir_error_api(
+                    code="bad_request.fecha_pasada",
+                    message="Fecha inválida",
+                    level="error",
+                    description="No se pueden realizar reservas en fechas u horas pasadas",
+                ),
+                400,
+            )
+    except (ValueError, TypeError) as e:
+        if isinstance(e, ValueError) and len(e.args) > 1 and isinstance(e.args[1], int):
+            raise e
+        raise ValueError(
+            construir_error_api(
+                code="bad_request.formato_fecha",
+                message="Formato de fecha inválido",
+                level="error",
+                description="El formato de la fecha de inicio es incorrecto",
+            ),
+            400,
+        )
+
+    #verificar existencia y estado del socio
+    socio = reservas_repository.obtener_estado_socio(datos["id_socio"])
     if not socio:
         raise ValueError(
             construir_error_api(
                 code=ERROR_CODE_SOCIO_NOT_FOUND,
-                message="Recurso no encontrado",
-                description=f"No se encontró el socio con id {id_socio}",
+                message="Socio no encontrado",
+                level="error",
+                description=f"El socio con ID {datos['id_socio']} no existe en el sistema",
             ),
             404,
         )
 
-    # validar que la cancha exista en la BD
-    cancha = obtener_cancha_por_id(id_cancha)
+    if not socio.get("activo", True):
+        raise ValueError(
+            construir_error_api(
+                code="conflict.socio_inactivo",
+                message="Socio inactivo",
+                level="error",
+                description=f"El socio con ID {datos['id_socio']} se encuentra inactivo",
+            ),
+            409,
+        )
+
+    #verificar existencia y estado de la cancha
+    cancha = reservas_repository.obtener_estado_cancha(datos["id_cancha"])
     if not cancha:
         raise ValueError(
             construir_error_api(
                 code=ERROR_CODE_CANCHA_NOT_FOUND,
-                message="Recurso no encontrado",
-                description=f"No se encontró la cancha con id {id_cancha}",
+                message="Cancha no encontrada",
+                level="error",
+                description=f"La cancha con ID {datos['id_cancha']} no existe en el sistema",
             ),
             404,
         )
 
+    if not cancha.get("activa", True):
+        raise ValueError(
+            construir_error_api(
+                code="conflict.cancha_inactiva",
+                message="Cancha inactiva",
+                level="error",
+                description=f"La cancha con ID {datos['id_cancha']} se encuentra inactiva",
+            ),
+            409,
+        )
+
     # validar superposición de horarios
-    if existe_superposicion(id_cancha, fecha_inicio, fecha_fin):
+    hay_solapamiento = reservas_repository.verificar_solapamiento(
+        id_cancha=datos["id_cancha"],
+        fecha_hora_inicio=datos["fecha_hora_inicio"],
+        fecha_hora_fin=datos["fecha_hora_fin"],
+    )
+    if hay_solapamiento:
         raise ValueError(
             construir_error_api(
                 code=ERROR_CODE_HORARIO_OCUPADO,
                 message="Horario no disponible",
+                level="error",
                 description="La cancha ya se encuentra reservada en el rango horario solicitado",
             ),
             409,
         )
 
-    # crear la reserva en la base
-    nuevo_id = crear_reserva(
-        id_cancha=id_cancha,
-        id_socio=id_socio,
-        fecha_hora_inicio=fecha_inicio,
-        fecha_hora_fin=fecha_fin,
-        precio_hora=datos_validados.get("precio_hora"),
-        precio_total=datos_validados.get("precio_total"),
-        estado=ESTADO_CONFIRMADA,
-    )
-
-    #retorna la reserva creada
-    return obtener_reserva(nuevo_id)
+    datos["estado"] = ESTADO_CONFIRMADA
+    return reservas_repository.crear(datos)
 
 
+def crear_nueva_reserva(datos: dict):
+    return crear_reserva(datos)
 
 
+def actualizar_reserva(id_reserva: int, datos: dict):
+    reserva_actual = obtener_reserva_por_id(id_reserva)
 
-def modificar_reserva(id_reserva, body: dict):
+    id_cancha = datos.get("id_cancha", reserva_actual["id_cancha"])
+    inicio = datos.get("fecha_hora_inicio", reserva_actual["fecha_hora_inicio"])
+    fin = datos.get("fecha_hora_fin", reserva_actual["fecha_hora_fin"])
 
-    id_reserva = validar_id(id_reserva)
-    # 1. Validar formato de los datos que vienen en el body (lanza 400 si falla)
-    datos_validados = validar_datos_actualizar_reserva(body)
-
-    # 2. Verificar que la reserva exista en la base de datos (404)
-    reserva_existente = obtener_reserva_por_id(id_reserva)
-    if not reserva_existente:
-        payload = construir_error_api(
-            code="NOT_FOUND",
-            message="Reserva no encontrada",
-            description=f"No se encontró ninguna reserva con el id {id_reserva}",
+    if "id_cancha" in datos and not reservas_repository.existe_cancha(id_cancha):
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_CANCHA_NOT_FOUND,
+                message="Cancha no encontrada",
+                level="error",
+                description=f"La cancha con ID {id_cancha} no existe en el sistema",
+            ),
+            404,
         )
-        # Lanzamos ValueError con código 404; procesar_error_api lo respetará
-        raise ValueError(payload, 404)
 
-    # 3. Ejecutar actualización
-    actualizar_reserva(id_reserva, datos_validados)
+    hay_solapamiento = reservas_repository.verificar_solapamiento(
+        id_cancha=id_cancha,
+        fecha_hora_inicio=inicio,
+        fecha_hora_fin=fin,
+        id_reserva_excluir=id_reserva,
+    )
+    if hay_solapamiento:
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_HORARIO_OCUPADO,
+                message="Horario no disponible",
+                level="error",
+                description="La cancha ya se encuentra reservada en el nuevo rango horario",
+            ),
+            409,
+        )
 
-    # 4. Devolver la entidad actualizada
-    return obtener_reserva(id_reserva)
+    return reservas_repository.actualizar(id_reserva, datos)
+
+
+def cambiar_estado_reserva(id_reserva: int, nuevo_estado: str):
+    #buscar la reserva actual
+    reserva_actual = obtener_reserva_por_id(id_reserva)
+    estado_actual = reserva_actual["estado"]
+
+    if estado_actual == nuevo_estado:
+        return reserva_actual
+
+    #si ya está cancelada o finalizada y se intenta cambiar a OTRO estado, lanza error 400
+    if estado_actual in (ESTADO_CANCELADA, ESTADO_FINALIZADA):
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_TRANSICION_INVALIDA,
+                message="Transición de estado inválida",
+                level="error",
+                description=f"No se puede cambiar el estado de una reserva que está '{estado_actual}'",
+            ),
+            400,
+        )
+
+    #si la transición es válida, actualiza en la BD
+    return reservas_repository.actualizar_estado(id_reserva, nuevo_estado)

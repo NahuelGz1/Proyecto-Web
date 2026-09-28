@@ -6,7 +6,7 @@ from src.services.socios import (
     obtener_socio_por_id,
     obtener_socios,
 )
-from src.utils import construir_error_api, generar_links_paginacion, procesar_error_api
+from src.utils import construir_error_api, generar_links_paginacion
 
 socios_bp = Blueprint('socios', __name__)
 
@@ -24,30 +24,20 @@ def manejar_integridad_db(error):
 
 
 # trae el listado de socios filtrado y paginado
-# por ejemplo: GET /socios?nombre=Juan&_limit=5 trae los primeros 5 socios que se llamen Juan
-# si no hay resultados devuelve 204 sin contenido
-@socios_bp.route("/socios", methods=["GET"])
+@socios_bp.route('/', methods=['GET'])
 def get_socios():
-    try:
-        socios, total, limit, offset = obtener_socios(request.args)
+    socios, total, limit, offset = obtener_socios(request.args)
 
-        if socios is None or len(socios) == 0:
-            return ("", 204)
+    if not socios:
+        return '', 204
 
-        payload = {
-            "_links": generar_links_paginacion(total, limit, offset),
-            "socios": socios,
-        }
-        return jsonify(payload), 200
+    enlaces = generar_links_paginacion(total, limit, offset)
 
-    except Exception as e:
-        payload, status = procesar_error_api(e)
-        return jsonify(payload), status
+    return jsonify({"socios": socios, "_links": enlaces}), 200
 
 
 # da de alta a un socio nuevo
-# recibe el json con los datos del socio y te devuelve el socio creado con codigo 201
-@socios_bp.route('/socios', methods=['POST'])
+@socios_bp.route('/', methods=['POST'])
 def alta_socio():
     datos = request.get_json(silent=True)
     nuevo_socio = crear_socio(datos)
@@ -55,8 +45,7 @@ def alta_socio():
 
 
 # busca la informacion de un solo socio por su id
-# por ejemplo: GET /socios/12 devuelve los datos del socio 12, o 404 si no existe
-@socios_bp.route('/socios/<id>', methods=['GET'])
+@socios_bp.route('/<id>', methods=['GET'])
 def get_socio(id):
     socio = obtener_socio_por_id(id)
 
@@ -73,8 +62,7 @@ def get_socio(id):
 
 
 # modifica datos de un socio existente
-# por example: PATCH /socios/5 enviando {"activo": false} desactiva a ese socio
-@socios_bp.route('/socios/<id>', methods=['PATCH'])
+@socios_bp.route('/<id>', methods=['PATCH'])
 def actualizar_socio(id):
     datos = request.get_json(silent=True)
     actualizacion = actualizar_socio_por_id(id, datos)

@@ -1,18 +1,18 @@
 from src.repositories.socios import (
-    listar_socios,
-    buscar_socio_por_id,
-    insertar_socio,
     actualizar_socio_en_base,
+    buscar_socio_por_id,
     contar_socios,
+    insertar_socio,
+    listar_socios,
 )
 
 from src.utils import (
-    validar_booleano,
-    validar_string_no_vacio,
-    validar_email,
     construir_error_api,
+    validar_booleano,
+    validar_email,
     validar_id,
     validar_paginacion,
+    validar_string_no_vacio,
 )
 
 
@@ -22,26 +22,20 @@ def obtener_socios(args: dict):
 
     nombre = args.get("nombre")
 
+    # manejo del booleano que viene como string desde los query params
     activo_raw = args.get("activo")
     if activo_raw is not None:
-        activo_raw = (
-            activo_raw.lower() == "true"
-            if isinstance(activo_raw, str)
-            else bool(activo_raw)
-        )
+        activo_raw = activo_raw.lower() == 'true' if isinstance(activo_raw, str) else bool(activo_raw)
 
-    activo = validar_booleano(activo_raw, nombre="activo", default=None)
+    activo = validar_booleano(activo_raw, 'activo', default=None)
 
     filtros = {"nombre": nombre, "activo": activo}
 
-
-    total = contar_socios(filtros)
-    if total == 0:
-        return None, 0, limit, offset
-
-
+    # obtenemos la lista y el total por separado
     socios = listar_socios(filtros, limit, offset)
+    total = contar_socios(filtros)
 
+    # retornamos los 4 valores para el unpacking del blueprint
     return socios, total, limit, offset
 
 
