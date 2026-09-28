@@ -1,18 +1,18 @@
 from src.repositories.socios import (
-    listar_socios,
-    buscar_socio_por_id,
-    insertar_socio,
     actualizar_socio_en_base,
+    buscar_socio_por_id,
     contar_socios,
+    insertar_socio,
+    listar_socios,
 )
 
 from src.utils import (
-    validar_booleano,
-    validar_string_no_vacio,
-    validar_email,
     construir_error_api,
+    validar_booleano,
+    validar_email,
     validar_id,
     validar_paginacion,
+    validar_string_no_vacio,
 )
 
 
@@ -31,11 +31,11 @@ def obtener_socios(args: dict):
 
     filtros = {"nombre": nombre, "activo": activo}
 
-    #obtenemos la lista y el total por separado
+    # obtenemos la lista y el total por separado
     socios = listar_socios(filtros, limit, offset)
     total = contar_socios(filtros)
 
-    #retornamos los 4 valores para el unpacking del blueprint
+    # retornamos los 4 valores para el unpacking del blueprint
     return socios, total, limit, offset
 
 

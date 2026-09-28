@@ -125,9 +125,30 @@ def validar_string_no_vacio(valor, nombre: str) -> str:
             400
         )
     return str(valor).strip()
-
 def validar_positivo(valor, nombre: str) -> int:
-    if valor is None or valor <= 0:
+    try:
+        val_num = int(valor)
+        if val_num <= 0:
+            raise ValueError()
+        return val_num
+    except (ValueError, TypeError):
+        raise ValueError(
+            construir_error_api(
+                code='invalid_numero',
+                message='Valor incompatible',
+                level='error',
+                description=f"El campo '{nombre}' debe ser un número entero positivo mayor a cero"
+            ),
+            400
+        )
+
+def validar_mayor_a_uno(valor, nombre: str) -> float:
+    try:
+        val_num = float(valor)
+        if val_num <= 0:
+            raise ValueError()
+        return val_num
+    except (ValueError, TypeError):
         raise ValueError(
             construir_error_api(
                 code='invalid_numero',
@@ -137,20 +158,6 @@ def validar_positivo(valor, nombre: str) -> int:
             ),
             400
         )
-    return valor
-
-def validar_mayor_a_uno(valor, nombre: str) -> int:
-    if valor is None or valor <= 1:
-        raise ValueError(
-            construir_error_api(
-                code='invalid_numero',
-                message='Valor incompatible',
-                level='error',
-                description=f"El campo '{nombre}' debe ser mayor a uno"
-            ),
-            400
-        )
-    return valor
 
 def validar_booleano(valor, nombre: str, default: bool) -> bool:
     if valor is None:
