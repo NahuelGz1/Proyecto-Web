@@ -16,25 +16,31 @@ from src.constants import (
     HORA_APERTURA,
     HORA_CIERRE,
 )
+
 from src.repositories.canchas import obtener_cancha_por_id
 from src.repositories.reservas import (
+    actualizar_reserva,
     contar_reservas,
     crear_reserva,
     existe_superposicion,
     listar_reservas,
-    actualizar_reserva,
     obtener_reserva_por_id,
 )
 from src.repositories.socios import buscar_socio_por_id
-from src.utils import construir_error_api, validar_paginacion, validar_mayor_a_uno, validar_id
-from src.validators.canchas import validar_filtros_canchas
 
-from src.validators.reservas import (
-    validar_filtros_reservas,
-    validar_crear_reserva,
+from src.utils import (
+    construir_error_api,
+    validar_id,
+    validar_mayor_a_uno,
+    validar_paginacion,
 )
-from src.utils import construir_error_api
-from src.validators.reservas import validar_datos_actualizar_reserva
+
+from src.validators.canchas import validar_filtros_canchas
+from src.validators.reservas import (
+    validar_crear_reserva,
+    validar_datos_actualizar_reserva,
+    validar_filtros_reservas,
+)
 
 
 def obtener_listado_reservas(args: dict):
@@ -136,7 +142,9 @@ def crear_nueva_reserva(datos):
 
 
 
-def modificar_reserva(id_reserva: int, body: dict):
+def modificar_reserva(id_reserva, body: dict):
+
+    id_reserva = validar_id(id_reserva)
     # 1. Validar formato de los datos que vienen en el body (lanza 400 si falla)
     datos_validados = validar_datos_actualizar_reserva(body)
 
@@ -155,4 +163,4 @@ def modificar_reserva(id_reserva: int, body: dict):
     actualizar_reserva(id_reserva, datos_validados)
 
     # 4. Devolver la entidad actualizada
-    return obtener_reserva_por_id(id_reserva)
+    return obtener_reserva(id_reserva)

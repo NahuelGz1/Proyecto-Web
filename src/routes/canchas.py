@@ -35,7 +35,7 @@ def get_canchas_disponibles():
 
 # busca y retorna el detalle de una cancha especifica mediante su id
 # por ejemplo: GET /canchas/5 devuelve los datos completos de la cancha 5
-@canchas_bp.route('/canchas/<int:cancha_id>', methods=['GET'])
+@canchas_bp.route('/canchas/<cancha_id>', methods=['GET'])
 def get_cancha_por_id(cancha_id):
     cancha = obtener_cancha(cancha_id)
     return jsonify(cancha), 200
@@ -53,8 +53,8 @@ def post_cancha():
 
 # modifica parcialmente los atributos de una cancha existente (PATCH)
 # por ejemplo: PATCH /canchas/2 con {"precio_hora": 2500} actualiza únicamente el precio
-@canchas_bp.route("/canchas/<int:cancha_id>", methods=["PATCH"])
-def patch_cancha(cancha_id: int):
+@canchas_bp.route("/canchas/<cancha_id>", methods=["PATCH"])
+def patch_cancha(cancha_id):
     data = request.get_json(silent=True)
     actualizar_cancha(cancha_id, data)
     return '', 204
@@ -62,7 +62,7 @@ def patch_cancha(cancha_id: int):
 
 # elimina permanentemente una cancha si no posee reservas asociadas
 # por ejemplo: DELETE /canchas/3 retorna status 204 si la eliminacion fue exitosa
-@canchas_bp.route("/canchas/<int:cancha_id>", methods=["DELETE"])
-def delete_cancha(cancha_id: int):
+@canchas_bp.route("/canchas/<cancha_id>", methods=["DELETE"])
+def delete_cancha(cancha_id):
     borrar_cancha(cancha_id)
     return "", 204

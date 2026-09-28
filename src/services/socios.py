@@ -3,30 +3,43 @@ from src.repositories.socios import (
     buscar_socio_por_id,
     insertar_socio,
     actualizar_socio_en_base,
+    contar_socios,
 )
+
 from src.utils import (
-    validar_limit,
-    validar_no_negativo,
     validar_booleano,
     validar_string_no_vacio,
     validar_email,
     construir_error_api,
+    validar_id,
+    validar_paginacion,
 )
 
 
 # aplica validaciones sobre parametros de busqueda/paginacion y trae la lista de socios
-# por ejemplo: obtener_socios(nombre="Juan", activo=True, limit=10, offset=0)
-def obtener_socios(nombre, activo, limit, offset):
-    limit = validar_limit(limit, 'limit')
-    offset = validar_no_negativo(offset, 'offset')
-    activo = validar_booleano(activo, 'activo', default=None)
+def obtener_socios(args: dict):
+    limit, offset = validar_paginacion(args)
+
+    nombre = args.get("nombre")
+
+    # manejo del booleano que viene como string desde los query params
+    activo_raw = args.get("activo")
+    if activo_raw is not None:
+        activo_raw = activo_raw.lower() == 'true' if isinstance(activo_raw, str) else bool(activo_raw)
+
+    activo = validar_booleano(activo_raw, 'activo', default=None)
 
     filtros = {"nombre": nombre, "activo": activo}
-    return listar_socios(filtros, limit, offset)
+
+    #obtenemos la lista y el total por separado
+    socios = listar_socios(filtros, limit, offset)
+    total = contar_socios(filtros)
+
+    #retornamos los 4 valores para el unpacking del blueprint
+    return socios, total, limit, offset
 
 
 # valida el cuerpo recibido e inserta un nuevo socio activo
-# por ejemplo: crear_socio({"nombre": "Juan Perez", "email": "juan@gmail.com"}) retorna el socio con su id
 def crear_socio(datos: dict) -> dict:
     if not datos:
         raise ValueError(
@@ -53,14 +66,15 @@ def crear_socio(datos: dict) -> dict:
 
 
 # obtiene un unico socio mediante su id
-# por ejemplo: obtener_socio_por_id(1) devuelve {"id": 1, "nombre": "Juan", ...} o None
-def obtener_socio_por_id(id_socio: int):
+def obtener_socio_por_id(id_socio):
+    id_socio = validar_id(id_socio)
     return buscar_socio_por_id(id_socio)
 
 
 # actualiza parcialmente los datos de un socio existente validando solo los campos enviados
-# por ejemplo: actualizar_socio_por_id(1, {"email": "nuevo@gmail.com"}) actualiza el email si el socio existe
-def actualizar_socio_por_id(id_socio: int, datos: dict) -> bool:
+def actualizar_socio_por_id(id_socio, datos: dict) -> bool:
+    id_socio = validar_id(id_socio)
+
     socio = buscar_socio_por_id(id_socio)
     if not socio:
         return False

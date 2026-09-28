@@ -11,18 +11,6 @@ from src.utils import construir_error_api, generar_links_paginacion
 socios_bp = Blueprint('socios', __name__)
 
 
-# funcion auxiliar para construir las urls de paginacion
-# si pedis socios paginados, te genera los links para navegar entre paginas manteniendo los filtros de nombre y si esta activo
-def _generar_enlace(nombre, activo, limit, offset):
-    return url_for(
-        'socios.get_socios',
-        nombre=nombre,
-        activo=activo,
-        _limit=limit,
-        _offset=offset,
-    )
-
-
 # manejador local para mails duplicados en la base de datos
 # si al crear o actualizar un socio pones un mail que ya existe, sqlalchemy lanza IntegrityError y esta funcion devuelve automaticamente el error 409
 @socios_bp.errorhandler(IntegrityError)
@@ -45,8 +33,6 @@ def get_socios():
     if not socios:
         return '', 204
 
-    ult_offset = max(((total - 1) // limit) * limit, 0) if total > 0 else 0
-
     enlaces = generar_links_paginacion(total, limit, offset)
 
     return jsonify({"socios": socios, "_links": enlaces}), 200
@@ -63,8 +49,8 @@ def alta_socio():
 
 # busca la informacion de un solo socio por su id
 # por ejemplo: GET /socios/12 devuelve los datos del socio 12, o 404 si no existe
-@socios_bp.route('/socios/<int:id>', methods=['GET'])
-def get_socio(id: int):
+@socios_bp.route('/socios/<id>', methods=['GET'])
+def get_socio(id):
     socio = obtener_socio_por_id(id)
 
     if socio is None:
@@ -81,8 +67,8 @@ def get_socio(id: int):
 
 # modifica datos de un socio existente
 # por example: PATCH /socios/5 enviando {"activo": false} desactiva a ese socio
-@socios_bp.route('/socios/<int:id>', methods=['PATCH'])
-def actualizar_socio(id: int):
+@socios_bp.route('/socios/<id>', methods=['PATCH'])
+def actualizar_socio(id):
     datos = request.get_json(silent=True)
     actualizacion = actualizar_socio_por_id(id, datos)
 
