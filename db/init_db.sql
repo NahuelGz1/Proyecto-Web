@@ -56,7 +56,11 @@ INSERT INTO canchas (id, nombre, id_deporte, precio_hora, techada, activa) VALUE
 INSERT INTO socios (id, nombre, email, activo) VALUES
     (1, 'Juan Pérez', 'juan.perez@email.com', TRUE),
     (2, 'María Gómez', 'maria.gomez@email.com', TRUE),
-    (3, 'Carlos Rodríguez', 'carlos.rodriguez@email.com', TRUE)
+    (3, 'Carlos Rodríguez', 'carlos.rodriguez@email.com', TRUE),
+    (8, 'Valentina Torres', 'valentina.torres@email.com', TRUE),
+    (9, 'Andrés Ramírez', 'andres.ramirez@email.com', TRUE),
+    (10, 'Camila Navarro', 'camila.navarro@email.com', FALSE),
+    (11, 'Federico Ruiz', 'federico.ruiz@email.com', FALSE)
     ON DUPLICATE KEY UPDATE nombre=VALUES(nombre);
 
 -- Reservas (asociadas a las canchas 1 y 2)

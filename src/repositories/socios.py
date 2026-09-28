@@ -8,9 +8,11 @@ def _armar_where(filtros: dict):
     condiciones = []
     parametros = {}
 
-    if filtros.get("nombre"):
-        condiciones.append("nombre LIKE :nombre")
-        parametros["nombre"] = f"%{filtros['nombre']}%"
+    nombre = filtros.get("nombre")
+    if nombre is not None and str(nombre).strip() != "":
+        # Comparamos LOWER(nombre) contra el valor ya en minúsculas desde Python
+        condiciones.append("LOWER(nombre) LIKE :nombre")
+        parametros["nombre"] = f"%{str(nombre).strip().lower()}%"
 
     if filtros.get("activo") is not None:
         condiciones.append("activo = :activo")

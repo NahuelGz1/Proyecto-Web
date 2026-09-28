@@ -6,7 +6,7 @@ from src.services.socios import (
     obtener_socio_por_id,
     obtener_socios,
 )
-from src.utils import construir_error_api, generar_links_paginacion
+from src.utils import construir_error_api, generar_links_paginacion, procesar_error_api
 
 socios_bp = Blueprint('socios', __name__)
 
@@ -26,16 +26,23 @@ def manejar_integridad_db(error):
 # trae el listado de socios filtrado y paginado
 # por ejemplo: GET /socios?nombre=Juan&_limit=5 trae los primeros 5 socios que se llamen Juan
 # si no hay resultados devuelve 204 sin contenido
-@socios_bp.route('/socios', methods=['GET'])
+@socios_bp.route("/socios", methods=["GET"])
 def get_socios():
-    socios, total, limit, offset = obtener_socios(request.args)
+    try:
+        socios, total, limit, offset = obtener_socios(request.args)
 
-    if not socios:
-        return '', 204
+        if socios is None or len(socios) == 0:
+            return ("", 204)
 
-    enlaces = generar_links_paginacion(total, limit, offset)
+        payload = {
+            "_links": generar_links_paginacion(total, limit, offset),
+            "socios": socios,
+        }
+        return jsonify(payload), 200
 
-    return jsonify({"socios": socios, "_links": enlaces}), 200
+    except Exception as e:
+        payload, status = procesar_error_api(e)
+        return jsonify(payload), status
 
 
 # da de alta a un socio nuevo

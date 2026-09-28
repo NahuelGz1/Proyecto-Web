@@ -22,20 +22,26 @@ def obtener_socios(args: dict):
 
     nombre = args.get("nombre")
 
-    # manejo del booleano que viene como string desde los query params
     activo_raw = args.get("activo")
     if activo_raw is not None:
-        activo_raw = activo_raw.lower() == 'true' if isinstance(activo_raw, str) else bool(activo_raw)
+        activo_raw = (
+            activo_raw.lower() == "true"
+            if isinstance(activo_raw, str)
+            else bool(activo_raw)
+        )
 
-    activo = validar_booleano(activo_raw, 'activo', default=None)
+    activo = validar_booleano(activo_raw, nombre="activo", default=None)
 
     filtros = {"nombre": nombre, "activo": activo}
 
-    #obtenemos la lista y el total por separado
-    socios = listar_socios(filtros, limit, offset)
-    total = contar_socios(filtros)
 
-    #retornamos los 4 valores para el unpacking del blueprint
+    total = contar_socios(filtros)
+    if total == 0:
+        return None, 0, limit, offset
+
+
+    socios = listar_socios(filtros, limit, offset)
+
     return socios, total, limit, offset
 
 
