@@ -1,5 +1,5 @@
 from src.constants import ERROR_CODE_CANCHA_NOT_FOUND
-from src.utils import construir_error_api, validar_paginacion
+from src.utils import construir_error_api, validar_paginacion, validar_id
 
 from src.repositories.canchas import (
     contar_canchas,
@@ -37,6 +37,7 @@ def obtener_listado_canchas(args):
 # busca una cancha por su id y lanza error 404 si no existe
 # por ejemplo: obtener_cancha(5) devuelve la cancha o lanza ValueError con status 404
 def obtener_cancha(cancha_id):
+    cancha_id = validar_id(cancha_id)
     cancha = obtener_cancha_por_id(cancha_id)
 
     if not cancha:
@@ -79,17 +80,19 @@ def registrar_cancha(body: dict) -> dict:
 
 # aplica cambios parciales sobre una cancha existente (PATCH)
 # por example: actualizar_cancha(3, {"precio_hora": 2500}) modifica solo el precio si la cancha existe
-def actualizar_cancha(cancha_id: int, body: dict) -> None:
+def actualizar_cancha(cancha_id, body: dict) -> None:
+    cancha_id = validar_id(cancha_id)
+
     campos_validados = validar_body_modificar_cancha(body)
-
     obtener_cancha(cancha_id)
-
     modificar_cancha(cancha_id, campos_validados)
 
 
 # elimina una cancha asegurando primero que exista y que no posea reservas vinculadas
 # por ejemplo: si la cancha id=1 tiene reservas asociadas, lanza conflicto 409
-def borrar_cancha(cancha_id: int) -> None:
+def borrar_cancha(cancha_id) -> None:
+    cancha_id = validar_id(cancha_id)
+
     obtener_cancha(cancha_id)
 
     if tiene_reservas_asociadas(cancha_id):
@@ -104,8 +107,7 @@ def borrar_cancha(cancha_id: int) -> None:
 
     eliminar_cancha(cancha_id)
 
-
-# busca y pagina las canchas libres para la fecha y rango horario especificados
+    # busca y pagina las canchas libres para la fecha y rango horario especificados
 # por ejemplo: recibe args con fecha, hora_inicio y hora_fin, devolviendo solo las que no estan reservadas
 def obtener_canchas_disponibles(args):
     datos = validar_disponibilidad(args)

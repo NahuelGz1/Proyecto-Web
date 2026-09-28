@@ -30,7 +30,7 @@ def get_reservas():
 
 
 @reservas_bp.route("/reservas/<id>", methods=["GET"])
-def get_reserva_por_id(id: int):
+def get_reserva_por_id(id):
     try:
         reserva = obtener_reserva(id)
         return jsonify(reserva), 200
@@ -55,7 +55,7 @@ def post_reserva():
         return jsonify(payload), status
 
 
-@reservas_bp.route("/reservas/<int:id_reserva>", methods=["PUT"])
+@reservas_bp.route("/reservas/<id_reserva>", methods=["PUT"])
 def put_reserva(id_reserva):
     try:
         body = request.get_json(silent=True)
