@@ -1,294 +1,382 @@
-from src.constants import ERROR_CODE_INVALID_PARAM
-from src.utils import construir_error_api
+import re
 from datetime import datetime
 
-# esta funcion valida los filtros que se pueden pasar por query params a la ruta de reservas...
+from src.constants import (
+    ERROR_CODE_INVALID_BODY,
+    ERROR_CODE_INVALID_FECHA,
+    ERROR_CODE_INVALID_PARAM,
+    ESTADO_CANCELADA,
+    ESTADO_CONFIRMADA,
+    ESTADO_FINALIZADA,
+    FORMATO_FECHA,
+)
+from src.utils import (
+    construir_error_api,
+    validar_id,
+    validar_string_no_vacio,
+)
+
+#expresión regular ajustada al contrato Swagger para ISO 8601 GMT-3
+ISO_GMT3_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}-03:00$")
+
+ESTADOS_PERMITIDOS = (
+    ESTADO_CONFIRMADA,
+    ESTADO_CANCELADA,
+    ESTADO_FINALIZADA,
+)
+
+
 def validar_filtros_reservas(args: dict) -> dict:
-    """
-    PRE CONDICIONES:
-    POST CONDICIONES: devuelve un diccionario con los filtros validados para las reservas.
-    Si no hay filtros devuelve un diccionario vacio
-    """
     filtros = {}
     errores = []
 
-    id_cancha = args.get("id_cancha")
-    if id_cancha:
+    # Se usa .get() validando que la clave exista explícitamente
+    if "id_cancha" in args and args.get("id_cancha") is not None:
         try:
-            filtros["id_cancha"] = int(id_cancha)
+            filtros["id_cancha"] = validar_id(args["id_cancha"])
         except ValueError:
             errores.append(
                 {
-                    "code":"PARAM_INVALIDO",
-                    "message":"Parámetro inválido",
-                    "level":"error",
-                    "description":"El parámetro 'id_cancha' debe ser un número entero válido"
+                    "code": ERROR_CODE_INVALID_PARAM,
+                    "message": "Parámetro inválido",
+                    "level": "error",
+                    "description": "El parámetro 'id_cancha' debe ser un número entero positivo mayor a 0",
                 }
             )
 
-    id_socio = args.get("id_socio")
-    if id_socio:
+    if "id_socio" in args and args.get("id_socio") is not None:
         try:
-            id_socio_val = int(id_socio)
-            if id_socio_val <= 0:
-                errores.append(
-                    {
-                        "code": "PARAM_INVALIDO",
-                        "message": "Parámetro inválido",
-                        "level": "error",
-                        "description": "El parámetro 'id_socio' debe ser un número entero positivo mayor a 0",
-                    }
-                )
-            else:
-                filtros["id_socio"] = id_socio_val
+            filtros["id_socio"] = validar_id(args["id_socio"])
         except ValueError:
             errores.append(
                 {
-                    "code": "PARAM_INVALIDO",
+                    "code": ERROR_CODE_INVALID_PARAM,
                     "message": "Parámetro inválido",
                     "level": "error",
-                    "description": "El parámetro 'id_socio' debe ser un número entero válido",
+                    "description": "El parámetro 'id_socio' debe ser un número entero positivo mayor a 0",
                 }
             )
 
     estado = args.get("estado")
     if estado:
-        estado_limpio = estado.strip().lower()
-        if estado_limpio not in ("confirmada", "cancelada", "finalizada"):
+        estado_limpio = str(estado).strip().lower()
+        if estado_limpio not in ESTADOS_PERMITIDOS:
             errores.append(
                 {
-                    "code":"PARAM_INVALIDO",
-                    "message":"Parámetro inválido",
-                    "level":"error",
-                    "description":f"El parámetro 'estado' debe ser uno de los siguientes valores: 'confirmada', 'cancelada', 'finalizada'. Valor recibido: '{estado}'"
+                    "code": ERROR_CODE_INVALID_PARAM,
+                    "message": "Parámetro inválido",
+                    "level": "error",
+                    "description": f"El parámetro 'estado' debe ser uno de los siguientes valores: {', '.join(ESTADOS_PERMITIDOS)}",
                 }
             )
         else:
             filtros["estado"] = estado_limpio
 
     fecha_desde = args.get("fecha_desde")
-    fecha_desde_valida = False
     if fecha_desde:
         try:
-            datetime.strptime(fecha_desde.strip(), "%Y-%m-%d")
-            filtros["fecha_desde"] = fecha_desde.strip()
-            fecha_desde_valida = True
+            datetime.strptime(str(fecha_desde).strip(), FORMATO_FECHA)
+            filtros["fecha_desde"] = str(fecha_desde).strip()
         except ValueError:
             errores.append(
                 {
-                    "code":"PARAM_INVALIDO",
-                    "message":"Parámetro inválido",
-                    "level":"error",
-                    "description":f"El parámetro 'fecha_desde' debe tener el formato 'YYYY-MM-DD'. Valor recibido: '{fecha_desde}'"
+                    "code": ERROR_CODE_INVALID_PARAM,
+                    "message": "Parámetro inválido",
+                    "level": "error",
+                    "description": f"El parámetro 'fecha_desde' debe tener el formato 'YYYY-MM-DD'",
                 }
             )
 
     fecha_hasta = args.get("fecha_hasta")
-    fecha_hasta_valida = False
     if fecha_hasta:
         try:
-            datetime.strptime(fecha_hasta.strip(), "%Y-%m-%d")
-            filtros["fecha_hasta"] = fecha_hasta.strip()
-            fecha_hasta_valida = True
+            datetime.strptime(str(fecha_hasta).strip(), FORMATO_FECHA)
+            filtros["fecha_hasta"] = str(fecha_hasta).strip()
         except ValueError:
             errores.append(
                 {
-                    "code": "PARAMETRO_INVALIDO",
-                    "message": "Parametro invalido",
+                    "code": ERROR_CODE_INVALID_PARAM,
+                    "message": "Parámetro inválido",
                     "level": "error",
-                    "description":f"El parámetro 'fecha_hasta' debe tener el formato 'YYYY-MM-DD'. Valor recibido: '{fecha_hasta}'"
-                }
-            )
-
-    if fecha_desde_valida and fecha_hasta_valida:
-        if filtros["fecha_desde"] > filtros["fecha_hasta"]:
-            errores.append(
-                {
-                    "code": "PARAMETRO_INVALIDO",
-                    "message": "Rango de fechas incoherente",
-                    "level": "error",
-                    "description": "'fecha_desde' no puede ser posterior a 'fecha_hasta'",
+                    "description": f"El parámetro 'fecha_hasta' debe tener el formato 'YYYY-MM-DD'",
                 }
             )
 
     if errores:
-        payload_error = construir_error_api(errores_multiples=errores)
-        raise ValueError(payload_error, 400)
+        raise ValueError(construir_error_api(errores_multiples=errores), 400)
 
     return filtros
 
 
-
 def validar_crear_reserva(datos: dict) -> dict:
     """
-    Valida el cuerpo JSON para el endpoint POST /reservas
-    acumulando errores según la especificación de Swagger.
+    PRE CONDICIONES: Recibe el diccionario del payload del request POST /reservas.
+    POST CONDICIONES: Devuelve los datos listos o eleva un ValueError con 400 acumulando inconsistencias.
     """
+    if not isinstance(datos, dict) or not datos:
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_INVALID_BODY,
+                message="El cuerpo de la solicitud es inválido",
+                level="error",
+                description="Se esperaba un objeto JSON no vacío en el cuerpo de la solicitud",
+            ),
+            400,
+        )
+
     errores = []
 
-
+    # 1. Campos obligatorios
     campos_requeridos = [
-        "id_socio", "id_cancha", "fecha_hora_inicio",
-        "fecha_hora_fin", "precio_hora", "precio_total"
+        "id_socio",
+        "id_cancha",
+        "fecha_hora_inicio",
+        "fecha_hora_fin",
     ]
     for campo in campos_requeridos:
         if campo not in datos or datos[campo] is None:
-            errores.append({
-                "code": "ERROR_VALIDACION",
-                "message": "El cuerpo de la solicitud es inválido",
-                "level": "error",
-                "description": f"El campo '{campo}' es obligatorio"
-            })
+            errores.append(
+                {
+                    "code": f"required.{campo}",
+                    "message": "El cuerpo de la solicitud es inválido",
+                    "level": "error",
+                    "description": f"El campo '{campo}' es obligatorio",
+                }
+            )
 
-    #validaciones de números enteros positivos
-    for campo in ["precio_hora", "precio_total", "id_socio", "id_cancha"]:
+    # validación de ids usando validar_id
+    for campo in ["id_socio", "id_cancha"]:
         valor = datos.get(campo)
-        if valor is not None and (not isinstance(valor, int) or valor <= 0):
-            errores.append({
-                "code": "ERROR_VALIDACION",
-                "message": "El cuerpo de la solicitud es inválido",
-                "level": "error",
-                "description": f"El campo '{campo}' debe ser un entero mayor a cero"
-            })
+        if valor is not None:
+            try:
+                validar_id(valor)
+            except ValueError:
+                errores.append(
+                    {
+                        "code": ERROR_CODE_INVALID_PARAM,
+                        "message": "El cuerpo de la solicitud es inválido",
+                        "level": "error",
+                        "description": f"El campo '{campo}' debe ser un número entero positivo mayor a cero",
+                    }
+                )
 
-    #validaciones de fechas ISO
-    inicio_valido = False
-    fin_valido = False
+    #validación de fechas ISO 8601 GMT-3
+    inicio_valido, fin_valido = False, False
+    inicio, fin = None, None
 
-    if datos.get("fecha_hora_inicio"):
-        try:
-            inicio = datetime.fromisoformat(datos["fecha_hora_inicio"])
-            inicio_valido = True
-        except (ValueError, TypeError):
-            errores.append({
-                "code": "ERROR_VALIDACION",
-                "message": "El cuerpo de la solicitud es inválido",
-                "level": "error",
-                "description": "El campo 'fecha_hora_inicio' debe ser una fecha/hora en formato ISO 8601 válida"
-            })
-
-    if datos.get("fecha_hora_fin"):
-        try:
-            fin = datetime.fromisoformat(datos["fecha_hora_fin"])
-            fin_valido = True
-        except (ValueError, TypeError):
-            errores.append({
-                "code": "ERROR_VALIDACION",
-                "message": "El cuerpo de la solicitud es inválido",
-                "level": "error",
-                "description": "El campo 'fecha_hora_fin' debe ser una fecha/hora en formato ISO 8601 válida"
-            })
+    for campo_fecha in ["fecha_hora_inicio", "fecha_hora_fin"]:
+        val_fecha = datos.get(campo_fecha)
+        if val_fecha:
+            str_fecha = str(val_fecha).strip()
+            if not ISO_GMT3_REGEX.match(str_fecha):
+                errores.append(
+                    {
+                        "code": ERROR_CODE_INVALID_FECHA,
+                        "message": "El cuerpo de la solicitud es inválido",
+                        "level": "error",
+                        "description": f"El campo '{campo_fecha}' debe respetar el formato ISO 8601 con microsegundos y zona GMT-3 (ej: 2026-10-15T18:00:00.000000-03:00)",
+                    }
+                )
+            else:
+                try:
+                    parsed_dt = datetime.fromisoformat(str_fecha)
+                    if campo_fecha == "fecha_hora_inicio":
+                        inicio = parsed_dt
+                        inicio_valido = True
+                    else:
+                        fin = parsed_dt
+                        fin_valido = True
+                except ValueError:
+                    errores.append(
+                        {
+                            "code": ERROR_CODE_INVALID_FECHA,
+                            "message": "El cuerpo de la solicitud es inválido",
+                            "level": "error",
+                            "description": f"El campo '{campo_fecha}' no contiene una fecha/hora válida",
+                        }
+                    )
 
     if inicio_valido and fin_valido and inicio >= fin:
-        errores.append({
-            "code": "ERROR_VALIDACION",
-            "message": "El cuerpo de la solicitud es inválido",
-            "level": "error",
-            "description": "La 'fecha_hora_inicio' debe ser anterior a 'fecha_hora_fin'"
-        })
+        errores.append(
+            {
+                "code": ERROR_CODE_INVALID_FECHA,
+                "message": "El cuerpo de la solicitud es inválido",
+                "level": "error",
+                "description": "La 'fecha_hora_inicio' debe ser anterior a 'fecha_hora_fin'",
+            }
+        )
 
     if errores:
-        payload_error = construir_error_api(errores_multiples=errores)
-        raise ValueError(payload_error, 400)
+        raise ValueError(construir_error_api(errores_multiples=errores), 400)
 
     return datos
 
 
-
 def validar_datos_actualizar_reserva(data: dict) -> dict:
-    if not data or not isinstance(data, dict):
-        payload = construir_error_api(
-            code="CUERPO_INVALIDO",
-            message="El cuerpo de la solicitud no puede estar vacío y debe ser un JSON válido",
-            description="Se esperaba un objeto JSON en el cuerpo del request",
+    """
+    PRE CONDICIONES: Recibe el diccionario del request PUT /reservas/<id>.
+    POST CONDICIONES: Valida parcialmente las claves presentes y devuelve el diccionario refinado.
+    """
+    if not isinstance(data, dict) or not data:
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_INVALID_BODY,
+                message="El cuerpo de la solicitud no puede estar vacío y debe ser un JSON válido",
+                level="error",
+                description="Se esperaba un objeto JSON en el cuerpo del request",
+            ),
+            400,
         )
-        raise ValueError(payload, 400)
 
     errores = []
     datos_limpios = {}
 
-    #  Validar id_cancha
-    if "id_cancha" in data:
+    if "id_cancha" in data and data["id_cancha"] is not None:
         try:
-            datos_limpios["id_cancha"] = int(str(data["id_cancha"]).strip())
+            datos_limpios["id_cancha"] = validar_id(data["id_cancha"])
         except ValueError:
             errores.append(
                 {
-                    "code": "PARAMETRO_INVALIDO",
-                    "message": "El campo 'id_cancha' debe ser un número entero",
+                    "code": ERROR_CODE_INVALID_PARAM,
+                    "message": "El campo 'id_cancha' es inválido",
                     "level": "error",
-                    "description": f"Se recibió {data.get('id_cancha')}",
+                    "description": f"Se recibió {data.get('id_cancha')}. Debe ser un número entero positivo",
                 }
             )
 
-    #  Validar estado
-    if "estado" in data:
-        estado = str(data["estado"]).strip().lower()
-        if estado not in ("confirmada", "cancelada", "finalizada"):
+    if "estado" in data and data["estado"] is not None:
+        try:
+            estado_str = validar_string_no_vacio(data["estado"], "estado").lower()
+            if estado_str not in ESTADOS_PERMITIDOS:
+                errores.append(
+                    {
+                        "code": ERROR_CODE_INVALID_PARAM,
+                        "message": "El estado de la reserva es inválido",
+                        "level": "error",
+                        "description": f"Se recibió '{data.get('estado')}'. Valores permitidos: {', '.join(ESTADOS_PERMITIDOS)}",
+                    }
+                )
+            else:
+                datos_limpios["estado"] = estado_str
+        except ValueError:
             errores.append(
                 {
-                    "code": "PARAMETRO_INVALIDO",
-                    "message": "El estado de la reserva es inválido",
+                    "code": ERROR_CODE_INVALID_PARAM,
+                    "message": "El campo 'estado' no puede estar vacío",
                     "level": "error",
-                    "description": f"Se recibió '{data.get('estado')}'. Valores permitidos: confirmada, cancelada, finalizada",
+                    "description": "El campo 'estado' debe ser una cadena válida",
+                }
+            )
+
+    inicio, fin = None, None
+    inicio_valido, fin_valido = False, False
+
+    if "fecha_hora_inicio" in data and data["fecha_hora_inicio"] is not None:
+        str_inicio = str(data["fecha_hora_inicio"]).strip()
+        if not ISO_GMT3_REGEX.match(str_inicio):
+            errores.append(
+                {
+                    "code": ERROR_CODE_INVALID_FECHA,
+                    "message": "El formato de 'fecha_hora_inicio' es inválido",
+                    "level": "error",
+                    "description": "Debe cumplir el estándar ISO 8601 con zona GMT-3 (ej: 2026-10-15T18:00:00.000000-03:00)",
                 }
             )
         else:
-            datos_limpios["estado"] = estado
+            try:
+                inicio = datetime.fromisoformat(str_inicio)
+                datos_limpios["fecha_hora_inicio"] = str_inicio
+                inicio_valido = True
+            except ValueError:
+                errores.append(
+                    {
+                        "code": ERROR_CODE_INVALID_FECHA,
+                        "message": "Fecha inválida",
+                        "level": "error",
+                        "description": "'fecha_hora_inicio' no es una fecha u hora válida",
+                    }
+                )
 
-    #  Validar fechas/horas si se envían en el PUT (formato: YYYY-MM-DD HH:MM:SS)
-    inicio = None
-    fin = None
-
-    if "fecha_hora_inicio" in data:
-        try:
-            inicio = datetime.strptime(
-                str(data["fecha_hora_inicio"]).strip(), "%Y-%m-%d %H:%M:%S"
-            )
-            datos_limpios["fecha_hora_inicio"] = data[
-                "fecha_hora_inicio"
-            ].strip()
-        except ValueError:
+    if "fecha_hora_fin" in data and data["fecha_hora_fin"] is not None:
+        str_fin = str(data["fecha_hora_fin"]).strip()
+        if not ISO_GMT3_REGEX.match(str_fin):
             errores.append(
                 {
-                    "code": "PARAMETRO_INVALIDO",
-                    "message": "El formato de 'fecha_hora_inicio' es inválido",
-                    "level": "error",
-                    "description": "Debe seguir el formato 'YYYY-MM-DD HH:MM:SS'",
-                }
-            )
-
-    if "fecha_hora_fin" in data:
-        try:
-            fin = datetime.strptime(
-                str(data["fecha_hora_fin"]).strip(), "%Y-%m-%d %H:%M:%S"
-            )
-            datos_limpios["fecha_hora_fin"] = data["fecha_hora_fin"].strip()
-        except ValueError:
-            errores.append(
-                {
-                    "code": "PARAMETRO_INVALIDO",
+                    "code": ERROR_CODE_INVALID_FECHA,
                     "message": "El formato de 'fecha_hora_fin' es inválido",
                     "level": "error",
-                    "description": "Debe seguir el formato 'YYYY-MM-DD HH:MM:SS'",
+                    "description": "Debe cumplir el estándar ISO 8601 con zona GMT-3 (ej: 2026-10-15T18:00:00.000000-03:00)",
                 }
             )
+        else:
+            try:
+                fin = datetime.fromisoformat(str_fin)
+                datos_limpios["fecha_hora_fin"] = str_fin
+                fin_valido = True
+            except ValueError:
+                errores.append(
+                    {
+                        "code": ERROR_CODE_INVALID_FECHA,
+                        "message": "Fecha inválida",
+                        "level": "error",
+                        "description": "'fecha_hora_fin' no es una fecha u hora válida",
+                    }
+                )
 
-    if inicio and fin and inicio >= fin:
+    if inicio_valido and fin_valido and inicio >= fin:
         errores.append(
             {
-                "code": "PARAMETRO_INVALIDO",
+                "code": ERROR_CODE_INVALID_FECHA,
                 "message": "Rango de horarios incoherente",
                 "level": "error",
                 "description": "'fecha_hora_inicio' debe ser anterior a 'fecha_hora_fin'",
             }
         )
 
-    # Si hay errores acumulados, corta el flujo con 400
     if errores:
-        payload = construir_error_api(errores_multiples=errores)
-        raise ValueError(payload, 400)
+        raise ValueError(construir_error_api(errores_multiples=errores), 400)
 
     return datos_limpios
 
 
+def validar_cambiar_estado_reserva(data: dict) -> dict:
+    """
+    PRE CONDICIONES: Recibe el diccionario del request PUT/PATCH /reservas/<id>/estado.
+    POST CONDICIONES: Devuelve el estado limpio o eleva ValueError con 400.
+    """
+    if not isinstance(data, dict) or not data:
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_INVALID_BODY,
+                message="El cuerpo de la solicitud es inválido",
+                level="error",
+                description="Se esperaba un objeto JSON no vacío en el cuerpo de la solicitud",
+            ),
+            400,
+        )
+
+    try:
+        estado_str = validar_string_no_vacio(data.get("estado"), "estado").lower()
+    except ValueError:
+        raise ValueError(
+            construir_error_api(
+                code="required.estado",
+                message="El cuerpo de la solicitud es inválido",
+                level="error",
+                description="El campo 'estado' es obligatorio y no puede estar vacío",
+            ),
+            400,
+        )
+
+    if estado_str not in ESTADOS_PERMITIDOS:
+        raise ValueError(
+            construir_error_api(
+                code=ERROR_CODE_INVALID_PARAM,
+                message="El estado de la reserva es inválido",
+                level="error",
+                description=f"Se recibió '{estado_str}'. Los valores permitidos son: {', '.join(ESTADOS_PERMITIDOS)}",
+            ),
+            400,
+        )
+
+    return {"estado": estado_str}

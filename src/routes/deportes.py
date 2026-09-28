@@ -1,17 +1,19 @@
 from flask import Blueprint, jsonify
 from src.services.deportes import obtener_deportes
+from src.utils import procesar_error_api
 
 deportes_bp = Blueprint('deportes', __name__)
 
 
-# trae la lista completa de deportes disponibles en el sistema
-# por ejemplo: GET /deportes te devuelve {"deportes": [{"id": 1, "nombre": "Futbol"}, {"id": 2, "nombre": "Tenis"}]}
-# si la tabla esta vacia te responde con un status 204 sin contenido
-@deportes_bp.route('/deportes', methods=['GET'])
+@deportes_bp.route('/', methods=['GET'])
 def get_deportes():
-    deportes = obtener_deportes()
+    try:
+        deportes = obtener_deportes()
 
-    if not deportes:
-        return '', 204
+        if not deportes:
+            return '', 204
 
-    return jsonify({"deportes": deportes}), 200
+        return jsonify({"deportes": deportes}), 200
+    except Exception as e:
+        payload, status = procesar_error_api(e)
+        return jsonify(payload), status

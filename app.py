@@ -14,10 +14,6 @@ app = Flask(__name__)
 app.json.ensure_ascii = False
 
 
-# MANEJO GLOBAL DE ERRORES
-
-
-
 # manejador global de errores de validacion
 # cuando salta algun problema esperado en el sistema, esta funcion lo atrapa al vuelo
 # por ejemplo: si querian crear una cancha sin nombre, la validacion falla y esta funcion se encarga de devolver el error en formato json con su codigo 400
@@ -47,10 +43,10 @@ def manejar_error_inesperado(error):
 
 # REGISTRO DE BLUEPRINTS
 
-app.register_blueprint(deportes_bp, url_prefix=BASE_URL)
-app.register_blueprint(socios_bp, url_prefix=BASE_URL)
-app.register_blueprint(canchas_bp, url_prefix=BASE_URL)
-app.register_blueprint(reservas_bp, url_prefix=BASE_URL)
+app.register_blueprint(deportes_bp, url_prefix=f"{BASE_URL}/deportes")
+app.register_blueprint(socios_bp, url_prefix=f"{BASE_URL}/socios")
+app.register_blueprint(canchas_bp, url_prefix=f"{BASE_URL}/canchas")
+app.register_blueprint(reservas_bp, url_prefix=f"{BASE_URL}/reservas")
 
 
 

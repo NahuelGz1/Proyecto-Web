@@ -12,7 +12,6 @@ socios_bp = Blueprint('socios', __name__)
 
 
 # manejador local para mails duplicados en la base de datos
-# si al crear o actualizar un socio pones un mail que ya existe, sqlalchemy lanza IntegrityError y esta funcion devuelve automaticamente el error 409
 @socios_bp.errorhandler(IntegrityError)
 def manejar_integridad_db(error):
     error409 = construir_error_api(
@@ -24,9 +23,7 @@ def manejar_integridad_db(error):
 
 
 # trae el listado de socios filtrado y paginado
-# por ejemplo: GET /socios?nombre=Juan&_limit=5 trae los primeros 5 socios que se llamen Juan
-# si no hay resultados devuelve 204 sin contenido
-@socios_bp.route('/socios', methods=['GET'])
+@socios_bp.route('/', methods=['GET'])
 def get_socios():
     socios, total, limit, offset = obtener_socios(request.args)
 
@@ -39,8 +36,7 @@ def get_socios():
 
 
 # da de alta a un socio nuevo
-# recibe el json con los datos del socio y te devuelve el socio creado con codigo 201
-@socios_bp.route('/socios', methods=['POST'])
+@socios_bp.route('/', methods=['POST'])
 def alta_socio():
     datos = request.get_json(silent=True)
     nuevo_socio = crear_socio(datos)
@@ -48,8 +44,7 @@ def alta_socio():
 
 
 # busca la informacion de un solo socio por su id
-# por ejemplo: GET /socios/12 devuelve los datos del socio 12, o 404 si no existe
-@socios_bp.route('/socios/<id>', methods=['GET'])
+@socios_bp.route('/<id>', methods=['GET'])
 def get_socio(id):
     socio = obtener_socio_por_id(id)
 
@@ -66,8 +61,7 @@ def get_socio(id):
 
 
 # modifica datos de un socio existente
-# por example: PATCH /socios/5 enviando {"activo": false} desactiva a ese socio
-@socios_bp.route('/socios/<id>', methods=['PATCH'])
+@socios_bp.route('/<id>', methods=['PATCH'])
 def actualizar_socio(id):
     datos = request.get_json(silent=True)
     actualizacion = actualizar_socio_por_id(id, datos)

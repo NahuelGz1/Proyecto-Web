@@ -7,62 +7,80 @@ from src.services.canchas import (
     obtener_listado_canchas,
     registrar_cancha,
 )
-from src.utils import generar_links_paginacion
+from src.utils import generar_links_paginacion, procesar_error_api
 
 canchas_bp = Blueprint('canchas', __name__)
 
 
-# obtiene el listado general de canchas aplicando filtros y paginacion
-# por ejemplo: GET /canchas?techada=true responde 200 con la lista paginada o 204 si esta vacia
-@canchas_bp.route('/canchas', methods=['GET'])
+# Listado general de canchas
+@canchas_bp.route('/', methods=['GET'])
 def get_canchas():
-    canchas, total, limit, offset = obtener_listado_canchas(request.args)
-    if not canchas:
-        return '', 204
+    try:
+        canchas, total, limit, offset = obtener_listado_canchas(request.args)
+        if not canchas:
+            return '', 204
 
-    links = generar_links_paginacion(total, limit, offset)
-    return jsonify({"canchas": canchas, "_links": links}), 200
+        links = generar_links_paginacion(total, limit, offset)
+        return jsonify({"canchas": canchas, "_links": links}), 200
+    except Exception as e:
+        payload, status = procesar_error_api(e)
+        return jsonify(payload), status
 
 
-# consulta y devuelve unicamente las canchas disponibles para un rango de fecha/hora
-# por ejemplo: GET /canchas/disponibles?fecha=2026-10-15&hora_inicio=18:00&hora_fin=19:00
-@canchas_bp.route("/canchas/disponibles", methods=["GET"])
+# Canchas disponibles
+@canchas_bp.route("/disponibles", methods=["GET"])
 def get_canchas_disponibles():
-    canchas, total, limit, offset = obtener_canchas_disponibles(request.args)
-    links = generar_links_paginacion(total, limit, offset)
-    return jsonify({"canchas": canchas, "_links": links}), 200
+    try:
+        canchas, total, limit, offset = obtener_canchas_disponibles(request.args)
+        links = generar_links_paginacion(total, limit, offset)
+        return jsonify({"canchas": canchas, "_links": links}), 200
+    except Exception as e:
+        payload, status = procesar_error_api(e)
+        return jsonify(payload), status
 
 
-# busca y retorna el detalle de una cancha especifica mediante su id
-# por ejemplo: GET /canchas/5 devuelve los datos completos de la cancha 5
-@canchas_bp.route('/canchas/<cancha_id>', methods=['GET'])
+# Detalle de cancha por ID
+@canchas_bp.route('/<cancha_id>', methods=['GET'])
 def get_cancha_por_id(cancha_id):
-    cancha = obtener_cancha(cancha_id)
-    return jsonify(cancha), 200
+    try:
+        cancha = obtener_cancha(cancha_id)
+        return jsonify(cancha), 200
+    except Exception as e:
+        payload, status = procesar_error_api(e)
+        return jsonify(payload), status
 
 
-# registra una nueva cancha en la base de datos
-# por ejemplo: POST /canchas crea la cancha y retorna status 201 junto al header Location
-@canchas_bp.route("/canchas", methods=["POST"])
+# Alta de nueva cancha
+@canchas_bp.route("/", methods=["POST"])
 def post_cancha():
-    data = request.get_json(silent=True)
-    cancha = registrar_cancha(data)
-    headers = {"Location": f"/canchas/{cancha['id']}"}
-    return jsonify(cancha), 201, headers
+    try:
+        data = request.get_json(silent=True)
+        cancha = registrar_cancha(data)
+        headers = {"Location": f"/canchas/{cancha['id']}"}
+        return jsonify(cancha), 201, headers
+    except Exception as e:
+        payload, status = procesar_error_api(e)
+        return jsonify(payload), status
 
 
-# modifica parcialmente los atributos de una cancha existente (PATCH)
-# por ejemplo: PATCH /canchas/2 con {"precio_hora": 2500} actualiza únicamente el precio
-@canchas_bp.route("/canchas/<cancha_id>", methods=["PATCH"])
+# Modificación parcial (PATCH)
+@canchas_bp.route("/<cancha_id>", methods=["PATCH"])
 def patch_cancha(cancha_id):
-    data = request.get_json(silent=True)
-    actualizar_cancha(cancha_id, data)
-    return '', 204
+    try:
+        data = request.get_json(silent=True)
+        actualizar_cancha(cancha_id, data)
+        return '', 204
+    except Exception as e:
+        payload, status = procesar_error_api(e)
+        return jsonify(payload), status
 
 
-# elimina permanentemente una cancha si no posee reservas asociadas
-# por ejemplo: DELETE /canchas/3 retorna status 204 si la eliminacion fue exitosa
-@canchas_bp.route("/canchas/<cancha_id>", methods=["DELETE"])
+# Eliminación permanente
+@canchas_bp.route("/<cancha_id>", methods=["DELETE"])
 def delete_cancha(cancha_id):
-    borrar_cancha(cancha_id)
-    return "", 204
+    try:
+        borrar_cancha(cancha_id)
+        return "", 204
+    except Exception as e:
+        payload, status = procesar_error_api(e)
+        return jsonify(payload), status
